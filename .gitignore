@@ -1,0 +1,40 @@
+# ----------------------
+# 🌐 Общие файлы
+# ----------------------
+.env
+*.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Логи
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ОС и редакторы
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# ----------------------
+# 📦 Node.js (backend + frontend)
+# ----------------------
+node_modules/
+package-lock.json
+yarn.lock
+
+# ----------------------
+# ⚛️ React build (frontend)
+# ----------------------
+build/
+dist/
+
+# ----------------------
+# 📦 npm global files
+# ----------------------
+.npm/
+.cache/
