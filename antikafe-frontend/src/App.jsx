@@ -31,23 +31,29 @@ export default function App() {
             <Route path="/register" element={<Register />} />
 
             {/* 🔐 Сайт после входа */}
-            <Route path="/site" element={
-              <ProtectedRoute>
-                <SiteLayout />
-              </ProtectedRoute>
-            }>
+            <Route
+              path="/site"
+              element={
+                <ProtectedRoute>
+                  <SiteLayout />
+                </ProtectedRoute>
+              }
+            >
               <Route path="home" element={<SiteHome />} />
               <Route path="products" element={<SiteProductsPage />} />
               <Route path="bookings" element={<SiteBookingPage />} />
               <Route path="system" element={<SiteSystemPage />} />
             </Route>
 
-            {/* 🔐 Веб-приложение (вспомогательное) */}
-            <Route path="/admin" element={
-              <ProtectedRoute>
-                <Admin />
-              </ProtectedRoute>
-            }>
+            {/* 🔐 Админка */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute>
+                  <Admin />
+                </ProtectedRoute>
+              }
+            >
               <Route path="guests" element={<GuestsPage />} />
               <Route path="products" element={<ProductsPage />} />
               <Route path="system" element={<SystemPage />} />
@@ -55,6 +61,18 @@ export default function App() {
               <Route path="bookings" element={<BookingsPage />} />
               <Route path="employees" element={<Employees />} />
             </Route>
+
+            {/* ❌ Заглушка для всех несуществующих маршрутов */}
+            <Route path="*" element={
+              <div style={{
+                padding: '2rem',
+                textAlign: 'center',
+                fontSize: '1.5rem',
+                color: 'red'
+              }}>
+                404: Страница не найдена
+              </div>
+            } />
           </Routes>
         </div>
       </Router>
