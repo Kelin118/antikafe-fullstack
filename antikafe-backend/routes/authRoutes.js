@@ -7,7 +7,7 @@ const User = require('../models/User');
 const verifyToken = require('../middleware/verifyToken');
 const checkRole = require('../middleware/checkRole');
 
-// Регистрация компании + администратора
+// ✅ Регистрация компании + администратора
 router.post('/register-company', async (req, res) => {
   const {
     companyName,
@@ -25,12 +25,7 @@ router.post('/register-company', async (req, res) => {
       return res.status(400).json({ message: 'Компания уже существует' });
     }
 
-    const company = new Company({
-      name: companyName,
-      login: companyLogin,
-      email,
-      phone
-    });
+    const company = new Company({ name: companyName, login: companyLogin, email, phone });
     await company.save();
 
     const hashedPassword = await bcrypt.hash(adminPassword, 10);
@@ -50,7 +45,7 @@ router.post('/register-company', async (req, res) => {
   }
 });
 
-// Вход сотрудника
+// ✅ Вход сотрудника
 router.post('/login', async (req, res) => {
   const { companyLogin, userLogin, password } = req.body;
 
@@ -60,13 +55,9 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Неверный логин компании' });
     }
 
-    const user = await User.findOne({
-      login: userLogin,
-      companyId: company._id
-    });
-
+    const user = await User.findOne({ login: userLogin, companyId: company._id });
     if (!user) {
-      return res.status(401).nyjson({ message: 'Пользователь не найден' });
+      return res.status(401).json({ message: 'Пользователь не найден' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -81,27 +72,14 @@ router.post('/login', async (req, res) => {
       username: user.username
     }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-    res.json({
-      token,
-      role: user.role,
-      username: user.username
-    });
+    res.json({ token, role: user.role, username: user.username });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ message: 'Ошибка входа' });
   }
 });
 
-router.delete('/:id', async (req, res) => {
-  try {
-    await User.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Пользователь удален' });
-  } catch (err) {
-    res.status(500).json({ error: 'Ошибка при удалении пользователя' });
-  }
-});
-
-// ✅ Удаление пользователя (только admin, нельзя удалить сам себя)
+// ✅ Удаление пользователя (с проверкой роли)
 router.delete('/:id', verifyToken, checkRole('admin'), async (req, res) => {
   const userIdToDelete = req.params.id;
   const requestingUserId = req.user.userId;
@@ -118,7 +96,5 @@ router.delete('/:id', verifyToken, checkRole('admin'), async (req, res) => {
     res.status(500).json({ error: 'Ошибка при удалении пользователя' });
   }
 });
-
-module.exports = router;
 
 module.exports = router;
