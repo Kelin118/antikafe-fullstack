@@ -24,6 +24,9 @@ app.use('/api/guests', guestRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/sales', saleRoutes);
+app.get('/api/test', (req, res) => {
+  res.send('✅ Backend работает!');
+});
 
 // 📦 Подключение к MongoDB и запуск сервера
 mongoose.connect(process.env.MONGO_URI, {
