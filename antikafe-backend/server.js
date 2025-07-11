@@ -1,59 +1,45 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
 const dotenv = require('dotenv');
-
-const authRoutes = require('./routes/authRoutes');
-const bookingRoutes = require('./routes/bookingRoutes');
-const productRoutes = require('./routes/productRoutes');
-const guestRoutes = require('./routes/guestRoutes');
-const userRoutes = require('./routes/userRoutes');
-const saleRoutes = require('./routes/saleRoutes');
+const cors = require('cors');
+const authRoutes = require('./routes/authRoutes'); // ✅
 
 dotenv.config();
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
-// 🔗 Роуты
-app.use('/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/guests', guestRoutes);
-app.use('/api/guests', guestRoutes);
-app.use('/api/bookings', bookingRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/sales', saleRoutes);
-app.get('/api/test', (req, res) => {
-  res.send('✅ Backend работает!');
-});
+// ✅ Подключаем маршруты с правильным префиксом
+app.use('/api/auth', authRoutes);
 
-// 📦 Подключение к MongoDB и запуск сервера
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-}).then(async () => {
-  console.log('MongoDB connected');
+mongoose
+  .connect(process.env.MONGODB_URI, {
+    // эти параметры можно удалить в новых версиях драйвера
+    // useNewUrlParser: true,
+    // useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log('MongoDB connected');
 
-  // ✅ Создание уникального индекса на email, если он задан
-  try {
+    // создаём индекс на email (по желанию)
     const User = require('./models/User');
-    await User.collection.createIndex(
+    User.collection.createIndex(
       { email: 1 },
       {
         unique: true,
-        partialFilterExpression: { email: { $type: 'string' } } // индекс только если email строка
+        partialFilterExpression: { email: { $type: 'string' } }
       }
-    );
-    console.log('✅ Partial index on email ensured');
-  } catch (indexErr) {
-    console.error('❌ Ошибка при создании индекса email:', indexErr);
-  }
+    ).then(() => {
+      console.log('✅ Partial index on email ensured');
+    }).catch((indexErr) => {
+      console.error('❌ Ошибка при создании индекса email:', indexErr);
+    });
 
-  // 🚀 Запуск сервера
-  app.listen(process.env.PORT, () =>
-    console.log(`Server running on port ${process.env.PORT}`)
-  );
-}).catch((err) => {
-  console.error('MongoDB connection error:', err);
-});
+    const port = process.env.PORT || 5000;
+    app.listen(port, () => console.log(`Server running on port ${port}`));
+  })
+  .catch((err) => {
+    console.error('MongoDB connection error:', err);
+  });
