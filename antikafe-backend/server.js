@@ -17,13 +17,14 @@ app.use(cors());
 app.use(express.json());
 
 // 🔗 Роуты
-app.use('/auth', authRoutes);
+app.use('/api/auth', authRoutes); // ✅ ИСПРАВЛЕНО: было /auth
 app.use('/api/users', userRoutes);
-app.use('/guests', guestRoutes);
+app.use('/guests', guestRoutes);           // Можно оставить, если есть старый фронт
 app.use('/api/guests', guestRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/sales', saleRoutes);
+
 app.get('/api/test', (req, res) => {
   res.send('✅ Backend работает!');
 });
@@ -35,14 +36,14 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(async () => {
   console.log('MongoDB connected');
 
-  // ✅ Создание уникального индекса на email, если он задан
+  // ✅ Создание уникального индекса на email
   try {
     const User = require('./models/User');
     await User.collection.createIndex(
       { email: 1 },
       {
         unique: true,
-        partialFilterExpression: { email: { $type: 'string' } } // индекс только если email строка
+        partialFilterExpression: { email: { $type: 'string' } }
       }
     );
     console.log('✅ Partial index on email ensured');
