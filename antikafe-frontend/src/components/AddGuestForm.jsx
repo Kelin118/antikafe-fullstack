@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import axios from 'axios';
+import axios from '../utils/axiosInstance'; // ✅ здесь важное исправление
 
 export default function AddGuestForm({ onGuestAdded }) {
   const [name, setName] = useState('');
@@ -9,9 +9,9 @@ export default function AddGuestForm({ onGuestAdded }) {
     if (!name.trim()) return;
 
     try {
-      await axios.post('http://localhost:5000/guests', { name });
+      await axios.post('/guests', { name }); // ⚠️ Убери localhost, используй относительный путь
       setName('');
-      onGuestAdded();
+      onGuestAdded?.(); // Добавь проверку, если onGuestAdded не передан
     } catch (error) {
       console.error('Ошибка при добавлении гостя:', error);
     }
