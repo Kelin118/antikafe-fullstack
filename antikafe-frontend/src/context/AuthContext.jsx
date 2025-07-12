@@ -14,11 +14,13 @@ export function AuthProvider({ children }) {
       password,
     });
 
-    const token = response.data.token;
+  const token = response.data.token;
     setToken(token);
     localStorage.setItem('token', token);
     localStorage.setItem('role', response.data.role);
     localStorage.setItem('username', response.data.username);
+    localStorage.setItem('companyId', response.data.companyId); // ✅ добавлено
+
     return true;
   } catch (error) {
     console.error('Ошибка при входе:', error);
