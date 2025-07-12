@@ -3,23 +3,44 @@ const { v4: uuidv4 } = require('uuid'); // вверху файла
 
 // GET /guests
 exports.getGuests = async (req, res) => {
-  const guests = await Guest.find();
-  res.json(guests);
+  try {
+    const guests = await Guest.find({ companyId: req.user.companyId }); // 👈
+    res.json(guests);
+  } catch (error) {
+    res.status(500).json({ message: 'Ошибка при получении гостей', error });
+  }
 };
 
 // POST /guests
 exports.addGuest = async (req, res) => {
-  const { name } = req.body;
-  const guest = new Guest({ name });
-  await guest.save();
-  res.status(201).json(guest);
+  try {
+    const guest = new Guest({
+      name: req.body.name,
+      companyId: req.user.companyId // 👈
+    });
+    await guest.save();
+    res.status(201).json(guest);
+  } catch (error) {
+    res.status(500).json({ message: 'Ошибка при добавлении гостя', error });
+  }
 };
 
 // DELETE /guests/:id
 exports.deleteGuest = async (req, res) => {
-  const { id } = req.params;
-  await Guest.findByIdAndDelete(id);
-  res.json({ message: 'Guest removed' });
+  try {
+    const guest = await Guest.findOneAndDelete({
+      _id: req.params.id,
+      companyId: req.user.companyId // 👈 гарантирует, что удаляется только гость этой компании
+    });
+
+    if (!guest) {
+      return res.status(404).json({ message: 'Гость не найден или доступ запрещён' });
+    }
+
+    res.json({ message: 'Гость удалён' });
+  } catch (error) {
+    res.status(500).json({ message: 'Ошибка при удалении гостя', error });
+  }
 };
 
 // POST /guests/group
