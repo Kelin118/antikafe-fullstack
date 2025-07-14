@@ -40,6 +40,12 @@ mongoose.connect(process.env.MONGO_URI, {
 
   // ✅ Создание уникального индекса на email
   try {
+    const cors = require('cors');
+
+app.use(cors({
+  origin: ['https://antikafe-frontend.vercel.app'], // ✅ разрешённый frontend-домен
+  credentials: true,
+}));
     const User = require('./models/User');
     await User.collection.createIndex(
       { email: 1 },
