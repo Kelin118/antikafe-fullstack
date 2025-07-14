@@ -1,133 +1,94 @@
-import { useState, useEffect } from 'react';
+// src/pages/site/SiteBookingPage.jsx
+import { useEffect, useState } from 'react';
 import axios from '../../utils/axiosInstance';
 
 export default function SiteBookingPage() {
   const [bookings, setBookings] = useState([]);
-  const [form, setForm] = useState({
-    guestName: '',
-    date: '',
-    startTime: '',
-    duration: '',
-    room: '',
-  });
+  const [newBooking, setNewBooking] = useState({ groupName: '', date: '', time: '' });
 
-  const token = localStorage.getItem('token');
-  const headers = { headers: { Authorization: `Bearer ${token}` } };
+  const companyId = localStorage.getItem('companyId');
 
   const fetchBookings = async () => {
-    try {
-      const res = await axios.get('/api/bookings', headers);
-      setBookings(res.data);
-    } catch (err) {
-      console.error('Ошибка при загрузке броней:', err);
-    }
+    const res = await axios.get(`/bookings?companyId=${companyId}`);
+    setBookings(res.data);
   };
 
   const handleAddBooking = async () => {
-    const { guestName, date, startTime, duration, room } = form;
-    if (!guestName || !date || !startTime || !duration || !room) return;
+    const { groupName, date, time } = newBooking;
+    if (!groupName || !date || !time) return;
 
     try {
-      const startTime = new Date(`${form.date}T${form.startTime}`);
-      const endTime = new Date(startTime.getTime() + form.duration * 60000);
-
-      await axios.post('/api/bookings', {
-        room: form.room,
-        startTime,
-        endTime,
-        guestNames: [form.guestName],
-      }, headers);
-      setForm({ guestName: '', date: '', startTime: '', duration: '', room: '' });
+      await axios.post('/bookings', { ...newBooking, companyId });
+      setNewBooking({ groupName: '', date: '', time: '' });
       fetchBookings();
-    } catch (err) {
-      console.error('Ошибка при добавлении брони:', err);
-    }
-  };
-
-  const handleDeleteBooking = async (id) => {
-    try {
-      await axios.delete(`/api/bookings/${id}`, headers);
-      fetchBookings();
-    } catch (err) {
-      console.error('Ошибка при удалении брони:', err);
+    } catch (error) {
+      console.error('Ошибка при добавлении брони:', error);
     }
   };
 
   useEffect(() => {
-    fetchBookings();
-  }, []);
+    if (companyId) fetchBookings();
+  }, [companyId]);
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Бронирование</h1>
+    <div className="max-w-6xl mx-auto">
+      <h1 className="text-3xl font-bold text-secondary mb-6">Бронирования</h1>
 
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">Добавить бронь</h2>
-        <div className="grid grid-cols-5 gap-4">
+      {/* ➕ Добавление новой брони */}
+      <div className="bg-white p-6 rounded-lg shadow-md mb-8 border border-gray-200">
+        <h2 className="text-xl font-semibold mb-4">Добавить бронирование</h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <input
             type="text"
-            placeholder="Имя гостя"
-            value={form.guestName}
-            onChange={(e) => setForm({ ...form, guestName: e.target.value })}
+            placeholder="Название группы"
+            value={newBooking.groupName}
+            onChange={(e) => setNewBooking({ ...newBooking, groupName: e.target.value })}
             className="border px-3 py-2 rounded"
           />
           <input
             type="date"
-            value={form.date}
-            onChange={(e) => setForm({ ...form, date: e.target.value })}
+            value={newBooking.date}
+            onChange={(e) => setNewBooking({ ...newBooking, date: e.target.value })}
             className="border px-3 py-2 rounded"
           />
           <input
             type="time"
-            value={form.startTime}
-            onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+            value={newBooking.time}
+            onChange={(e) => setNewBooking({ ...newBooking, time: e.target.value })}
             className="border px-3 py-2 rounded"
           />
-          <input
-            type="number"
-            placeholder="Длительность (мин)"
-            value={form.duration}
-            onChange={(e) => setForm({ ...form, duration: e.target.value })}
-            className="border px-3 py-2 rounded"
-          />
-          <select
-            value={form.room}
-            onChange={(e) => setForm({ ...form, room: e.target.value })}
-            className="border px-3 py-2 rounded"
+          <button
+            onClick={handleAddBooking}
+            className="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 transition"
           >
-            <option value="">Выбери комнату</option>
-            <option value="VIP">VIP</option>
-            <option value="Обычная">Обычная</option>
-          </select>
+            Добавить
+          </button>
         </div>
-        <button
-          onClick={handleAddBooking}
-          className="mt-4 bg-primary text-white px-6 py-2 rounded"
-        >
-          Забронировать
-        </button>
       </div>
 
-      <div>
-        <h2 className="text-xl font-semibold mb-2">Список броней</h2>
-        <ul className="space-y-2">
-          {bookings.map((booking) => (
-            <li
-              key={booking._id}
-              className="p-3 border rounded flex justify-between items-center"
-            >
-              <div>
-                <strong>{booking.guestName}</strong> — {booking.date} {booking.startTime}, {booking.duration} мин, {booking.room}
-              </div>
-              <button
-                onClick={() => handleDeleteBooking(booking._id)}
-                className="text-red-600"
-              >
-                Удалить
-              </button>
-            </li>
-          ))}
-        </ul>
+      {/* 📋 Таблица бронирований */}
+      <div className="bg-white rounded-lg shadow-md overflow-x-auto border border-gray-200">
+        <table className="min-w-full">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="text-left px-4 py-2 border">Группа</th>
+              <th className="text-left px-4 py-2 border">Дата</th>
+              <th className="text-left px-4 py-2 border">Время</th>
+            </tr>
+          </thead>
+          <tbody>
+            {bookings.map((b) => (
+              <tr key={b._id} className="hover:bg-gray-50">
+                <td className="px-4 py-2 border">{b.groupName}</td>
+                <td className="px-4 py-2 border">{b.date}</td>
+                <td className="px-4 py-2 border">{b.time}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {bookings.length === 0 && (
+          <p className="text-center py-4 text-gray-500">Бронирований пока нет.</p>
+        )}
       </div>
     </div>
   );

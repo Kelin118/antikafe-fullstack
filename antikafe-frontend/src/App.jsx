@@ -19,85 +19,74 @@ import SiteSystemPage from './pages/site/SiteSystemPage';
 
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 export default function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="font-sans bg-white text-gray-800 min-h-screen">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+      <ThemeProvider> {/* ✅ Оборачиваем для поддержки темы */}
+        <Router>
+          <div className="font-sans bg-white dark:bg-gray-900 text-gray-800 dark:text-white min-h-screen transition-colors">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-            {/* 🔐 Сайт после входа (для всех ролей) */}
-            <Route
-              path="/site"
-              element={
-                <ProtectedRoute>
-                  <SiteLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="home" element={<SiteHome />} />
-              <Route path="products" element={<SiteProductsPage />} />
-              <Route path="bookings" element={<SiteBookingPage />} />
-              <Route path="system" element={<SiteSystemPage />} />
-            </Route>
+              {/* 🔐 Сайт после входа (для всех ролей) */}
+              <Route
+                path="/site"
+                element={
+                  <ProtectedRoute>
+                    <SiteLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="home" element={<SiteHome />} />
+                <Route path="products" element={<SiteProductsPage />} />
+                <Route path="bookings" element={<SiteBookingPage />} />
+                <Route path="system" element={<SiteSystemPage />} />
+              </Route>
 
-            {/* 🔐 Админка (только для admin) */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <Admin />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="guests" element={<GuestsPage />} />
-              <Route path="products" element={<ProductsPage />} />
-              <Route path="system" element={<SystemPage />} />
-              <Route path="add-group" element={<AddGuestGroup />} />
-              <Route path="bookings" element={<BookingsPage />} />
-              <Route path="employees" element={<Employees />} />
-            </Route>
+              {/* 🔐 Админка (только для admin) */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <Admin />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="guests" element={<GuestsPage />} />
+                <Route path="products" element={<ProductsPage />} />
+                <Route path="system" element={<SystemPage />} />
+                <Route path="add-group" element={<AddGuestGroup />} />
+                <Route path="bookings" element={<BookingsPage />} />
+                <Route path="employees" element={<Employees />} />
+              </Route>
 
-            {/* 🚫 Доступ запрещён */}
-            <Route
-              path="/unauthorized"
-              element={
-                <div
-                  style={{
-                    padding: '2rem',
-                    textAlign: 'center',
-                    fontSize: '1.5rem',
-                    color: 'darkorange'
-                  }}
-                >
-                  ⛔ У вас нет доступа к этой странице
-                </div>
-              }
-            />
+              {/* 🚫 Доступ запрещён */}
+              <Route
+                path="/unauthorized"
+                element={
+                  <div className="p-8 text-center text-xl text-orange-500">
+                    ⛔ У вас нет доступа к этой странице
+                  </div>
+                }
+              />
 
-            {/* ❌ Заглушка для всех несуществующих маршрутов */}
-            <Route
-              path="*"
-              element={
-                <div
-                  style={{
-                    padding: '2rem',
-                    textAlign: 'center',
-                    fontSize: '1.5rem',
-                    color: 'red'
-                  }}
-                >
-                  404: Страница не найдена
-                </div>
-              }
-            />
-          </Routes>
-        </div>
-      </Router>
+              {/* ❌ Заглушка для всех несуществующих маршрутов */}
+              <Route
+                path="*"
+                element={
+                  <div className="p-8 text-center text-xl text-red-500">
+                    404: Страница не найдена
+                  </div>
+                }
+              />
+            </Routes>
+          </div>
+        </Router>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

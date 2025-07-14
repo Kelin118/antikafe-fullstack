@@ -15,8 +15,8 @@ export default function Admin() {
   ];
 
   const handleLogout = () => {
-    logout();
-    navigate('/login');
+  logout();
+  navigate('/'); // 🔁 на сайт
   };
 
   return (
