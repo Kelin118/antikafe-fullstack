@@ -30,7 +30,7 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* 🔐 Сайт после входа */}
+            {/* 🔐 Сайт после входа (для всех ролей) */}
             <Route
               path="/site"
               element={
@@ -45,11 +45,11 @@ export default function App() {
               <Route path="system" element={<SiteSystemPage />} />
             </Route>
 
-            {/* 🔐 Админка */}
+            {/* 🔐 Админка (только для admin) */}
             <Route
               path="/admin"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['admin']}>
                   <Admin />
                 </ProtectedRoute>
               }
@@ -62,17 +62,39 @@ export default function App() {
               <Route path="employees" element={<Employees />} />
             </Route>
 
+            {/* 🚫 Доступ запрещён */}
+            <Route
+              path="/unauthorized"
+              element={
+                <div
+                  style={{
+                    padding: '2rem',
+                    textAlign: 'center',
+                    fontSize: '1.5rem',
+                    color: 'darkorange'
+                  }}
+                >
+                  ⛔ У вас нет доступа к этой странице
+                </div>
+              }
+            />
+
             {/* ❌ Заглушка для всех несуществующих маршрутов */}
-            <Route path="*" element={
-              <div style={{
-                padding: '2rem',
-                textAlign: 'center',
-                fontSize: '1.5rem',
-                color: 'red'
-              }}>
-                404: Страница не найдена
-              </div>
-            } />
+            <Route
+              path="*"
+              element={
+                <div
+                  style={{
+                    padding: '2rem',
+                    textAlign: 'center',
+                    fontSize: '1.5rem',
+                    color: 'red'
+                  }}
+                >
+                  404: Страница не найдена
+                </div>
+              }
+            />
           </Routes>
         </div>
       </Router>
