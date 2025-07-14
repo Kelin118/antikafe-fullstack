@@ -38,11 +38,10 @@ app.get('/api/test', (req, res) => {
 });
 
 // 📦 Подключение к MongoDB и запуск сервера
-mongoose.connect(process.env.MONGO_URI, {
+mongoose.connect("mongodb+srv://kivimynsky:Gagarin.com1@antikafe-fullstack.vhbmb1k.mongodb.net/?retryWrites=true&w=majority&appName=antikafe-fullstack", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-}).then(async () => {
-  console.log('MongoDB connected');
+})
 
   // ✅ Создание индекса
   try {
