@@ -3,6 +3,7 @@ import axios from '../../utils/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 
 export default function Register() {
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     companyName: '',
     companyLogin: '',

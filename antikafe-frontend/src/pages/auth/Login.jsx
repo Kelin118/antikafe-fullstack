@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Login() {
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth(); // Взяли login из контекста
   const [formData, setFormData] = useState({
     companyLogin: '',
