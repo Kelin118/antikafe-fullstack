@@ -14,13 +14,19 @@ const settingsRoutes = require('./routes/settingsRoutes');
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+// ✅ Правильная настройка CORS — СРАЗУ после app
+app.use(cors({
+  origin: 'https://antikafe-frontend.vercel.app',
+  credentials: true,
+}));
+
 app.use(express.json());
 
 // 🔗 Роуты
-app.use('/api/auth', authRoutes); // ✅ ИСПРАВЛЕНО: было /auth
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/guests', guestRoutes);           // Можно оставить, если есть старый фронт
+app.use('/guests', guestRoutes);
 app.use('/api/guests', guestRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/products', productRoutes);
@@ -38,14 +44,8 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(async () => {
   console.log('MongoDB connected');
 
-  // ✅ Создание уникального индекса на email
+  // ✅ Индекс email
   try {
-    const cors = require('cors');
-
-app.use(cors({
-  origin: ['https://antikafe-frontend.vercel.app'], // ✅ разрешённый frontend-домен
-  credentials: true,
-}));
     const User = require('./models/User');
     await User.collection.createIndex(
       { email: 1 },
@@ -60,8 +60,8 @@ app.use(cors({
   }
 
   // 🚀 Запуск сервера
-  app.listen(process.env.PORT, () =>
-    console.log(`Server running on port ${process.env.PORT}`)
+  app.listen(process.env.PORT || 5000, () =>
+    console.log(`Server running on port ${process.env.PORT || 5000}`)
   );
 }).catch((err) => {
   console.error('MongoDB connection error:', err);
