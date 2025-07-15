@@ -2,7 +2,8 @@
 const express = require('express');
 const router = express.Router();
 const { getSettings, updateSettings, uploadLogo, upload } = require('../controllers/settingsController');
-const authMiddleware = require('../middleware/authMiddleware');
+const authMiddleware = require('../middleware/verifyToken');
+
 
 // 🔐 Все маршруты защищены авторизацией
 router.use(authMiddleware);
