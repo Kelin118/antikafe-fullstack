@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 
+// Роуты
 const authRoutes = require('./routes/authRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const productRoutes = require('./routes/productRoutes');
@@ -15,54 +16,56 @@ dotenv.config();
 
 const app = express();
 
-// ✅ Правильная настройка CORS — СРАЗУ после app
+// ✅ CORS до всего остального
 app.use(cors({
-  origin: 'https://antikafe-frontend.vercel.app',
+  origin: process.env.CLIENT_URL || '*', // Подставляется Vercel-домен
   credentials: true,
 }));
 
+// ✅ Чтобы Express принимал JSON
 app.use(express.json());
 
-// 🔗 Роуты
+// ✅ Примитивный тест-эндпоинт
+app.get('/api/test', (req, res) => {
+  res.send('✅ Backend работает!');
+});
+
+// 🔗 Подключение роутов
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/guests', guestRoutes);
 app.use('/api/guests', guestRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/settings', settingsRoutes);
 
-app.get('/api/test', (req, res) => {
-  res.send('✅ Backend работает!');
-});
-
 // 📦 Подключение к MongoDB и запуск сервера
 mongoose.connect(process.env.MONGO_URI, {
+  // Эти опции уже не нужны, но можно оставить — не мешают
   useNewUrlParser: true,
   useUnifiedTopology: true,
 }).then(async () => {
-  console.log('MongoDB connected');
+  console.log('✅ MongoDB connected');
 
-  // ✅ Индекс email
+  // Создание индекса email
   try {
     const User = require('./models/User');
     await User.collection.createIndex(
       { email: 1 },
       {
         unique: true,
-        partialFilterExpression: { email: { $type: 'string' } }
+        partialFilterExpression: { email: { $type: 'string' } },
       }
     );
     console.log('✅ Partial index on email ensured');
-  } catch (indexErr) {
-    console.error('❌ Ошибка при создании индекса email:', indexErr);
+  } catch (err) {
+    console.error('❌ Ошибка при создании индекса:', err);
   }
 
-  // 🚀 Запуск сервера
-  app.listen(process.env.PORT || 5000, () =>
-    console.log(`Server running on port ${process.env.PORT || 5000}`)
-  );
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
 }).catch((err) => {
-  console.error('MongoDB connection error:', err);
+  console.error('❌ MongoDB connection error:', err);
 });
