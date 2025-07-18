@@ -1,23 +1,51 @@
-import React from 'react';
-import AddGuestForm from '../../components/AddGuestForm';
-import GuestList from '../../components/GuestList';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from '../../utils/axiosInstance';
 
-const GuestsPage = () => {
+export default function GuestsPage() {
+  const [guests, setGuests] = useState([]);
+  const navigate = useNavigate();
+
+  const fetchGuests = async () => {
+    try {
+      const response = await axios.get('/guests');
+      setGuests(response.data);
+    } catch (error) {
+      console.error('Ошибка при загрузке гостей:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchGuests();
+  }, []);
+
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6 text-primary">Гости антикафе</h1>
-      
-      <div className="bg-white shadow rounded-2xl p-4 mb-6">
-        <h2 className="text-lg font-semibold text-secondary mb-4">Добавить гостя</h2>
-        <AddGuestForm />
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-primary">Гости</h1>
+        <button
+          onClick={() => navigate('/admin/add-group')}
+          className="bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-xl transition-all"
+        >
+          Добавить гостя
+        </button>
       </div>
 
-      <div className="bg-white shadow rounded-2xl p-4">
-        <h2 className="text-lg font-semibold text-secondary mb-4">Список гостей</h2>
-        <GuestList />
-      </div>
+      {guests.length === 0 ? (
+        <div className="text-center text-gray-500 mt-10">Гостей пока нет</div>
+      ) : (
+        <div className="bg-white rounded-xl shadow p-4 space-y-2">
+          {guests.map((guest) => (
+            <div
+              key={guest._id}
+              className="flex items-center justify-between border-b py-2 last:border-b-0"
+            >
+              <span>{guest.name}</span>
+              <span className="text-sm text-gray-400">{new Date(guest.createdAt).toLocaleDateString()}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
-};
-
-export default GuestsPage;
+}

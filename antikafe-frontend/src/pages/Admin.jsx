@@ -1,61 +1,44 @@
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+// src/pages/Admin.jsx
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Card, CardContent } from '../components/ui/Card';
 
 export default function Admin() {
-  const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const location = useLocation();
 
-  const navItems = [
-    { path: '/admin/guests', label: 'Гости' },
-    { path: '/admin/products', label: 'Товары' },
-    { path: '/admin/bookings', label: 'Бронирование' },
-    { path: '/admin/add-group', label: 'Добавить группу' },
-    { path: '/admin/system', label: 'Система / Пользователи' },
+  const cards = [
+    { title: 'Гости', path: '/admin/guests', icon: '🧑‍🤝‍🧑' },
+    { title: 'Бронирования', path: '/admin/bookings', icon: '📅' },
+    { title: 'Сотрудники', path: '/admin/employees', icon: '👨‍💼' },
+    { title: 'Товары', path: '/admin/products', icon: '🛍️' },
+    { title: 'Система', path: '/admin/system', icon: '⚙️' },
   ];
 
-  const handleLogout = () => {
-  logout();
-  navigate('/'); // 🔁 на сайт
-  };
+  const isDashboard = location.pathname === '/admin';
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
-      {/* Сайдбар */}
-      <aside className="w-64 bg-white shadow-md p-6 flex flex-col justify-between">
-        <div>
-          <h2 className="text-2xl font-bold mb-8 text-center text-primary">Админ-панель</h2>
-          <nav className="space-y-3">
-            {navItems.map(({ path, label }) => (
-              <Link
+    <div className="p-6 min-h-screen bg-gray-50 dark:bg-gray-900">
+      {isDashboard ? (
+        <>
+          <h1 className="text-3xl font-bold text-primary mb-10 text-center">Панель администратора</h1>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {cards.map(({ title, path, icon }) => (
+              <Card
                 key={path}
-                to={path}
-                className={`block px-4 py-2 rounded-lg font-medium transition ${
-                  location.pathname === path
-                    ? 'bg-primary text-white'
-                    : 'text-gray-800 hover:bg-primary/10 hover:text-primary'
-                }`}
+                onClick={() => navigate(path)}
+                className="cursor-pointer bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
               >
-                {label}
-              </Link>
+                <CardContent className="p-8 text-center flex flex-col items-center justify-center">
+                  <div className="text-5xl mb-4">{icon}</div>
+                  <h2 className="text-xl font-semibold text-secondary dark:text-white">{title}</h2>
+                </CardContent>
+              </Card>
             ))}
-          </nav>
-        </div>
-
-        <div className="mt-10">
-          <button
-            onClick={handleLogout}
-            className="w-full text-center bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-md transition"
-          >
-            Выйти
-          </button>
-        </div>
-      </aside>
-
-      {/* Контент */}
-      <main className="flex-1 p-6">
+          </div>
+        </>
+      ) : (
         <Outlet />
-      </main>
+      )}
     </div>
   );
 }
