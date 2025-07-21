@@ -1,5 +1,7 @@
+
 const Product = require('../models/Product');
 const ProductGroup = require('../models/ProductGroup');
+const mongoose = require('mongoose');
 
 // Получить все товары текущей компании
 exports.getProducts = async (req, res) => {
@@ -15,6 +17,21 @@ exports.getProducts = async (req, res) => {
 // Создать товар
 exports.createProduct = async (req, res) => {
   const { name, price, stock, description, groupId } = req.body;
+
+  if (!name || typeof name !== 'string' || name.trim() === '') {
+    return res.status(400).json({ error: 'Имя товара обязательно' });
+  }
+  if (typeof price !== 'number' || price < 0) {
+    return res.status(400).json({ error: 'Цена должна быть положительным числом' });
+  }
+  if (!mongoose.Types.ObjectId.isValid(groupId)) {
+    return res.status(400).json({ error: 'Неверный ID группы' });
+  }
+
+  const group = await ProductGroup.findOne({ _id: groupId, companyId: req.user.companyId });
+  if (!group) {
+    return res.status(400).json({ error: 'Группа не найдена или не принадлежит компании' });
+  }
 
   try {
     const newProduct = new Product({
@@ -38,6 +55,10 @@ exports.updateProduct = async (req, res) => {
   const { id } = req.params;
   const { name, price, stock, description, groupId } = req.body;
 
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: 'Неверный ID товара' });
+  }
+
   try {
     const product = await Product.findOneAndUpdate(
       { _id: id, companyId: req.user.companyId },
@@ -56,6 +77,10 @@ exports.updateProduct = async (req, res) => {
 // Удалить товар
 exports.deleteProduct = async (req, res) => {
   const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: 'Неверный ID товара' });
+  }
 
   try {
     const deleted = await Product.findOneAndDelete({ _id: id, companyId: req.user.companyId });
@@ -83,6 +108,10 @@ exports.getGroups = async (req, res) => {
 exports.createGroup = async (req, res) => {
   const { name } = req.body;
 
+  if (!name || typeof name !== 'string' || name.trim() === '') {
+    return res.status(400).json({ error: 'Название группы обязательно' });
+  }
+
   try {
     const newGroup = new ProductGroup({ name, companyId: req.user.companyId });
     await newGroup.save();
@@ -96,6 +125,10 @@ exports.createGroup = async (req, res) => {
 // Удалить группу
 exports.deleteGroup = async (req, res) => {
   const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: 'Неверный ID группы' });
+  }
 
   try {
     const deleted = await ProductGroup.findOneAndDelete({ _id: id, companyId: req.user.companyId });
