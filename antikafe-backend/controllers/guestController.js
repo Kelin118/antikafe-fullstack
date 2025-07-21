@@ -56,7 +56,11 @@ exports.addGuestGroup = async (req, res) => {
   try {
     const createdGuests = await Promise.all(
       guests.map(name => {
-        const guest = new Guest({ name, groupId });
+        const guest = new Guest({
+          name,
+          groupId,
+          companyId: req.user.companyId // 👈 обязательно добавляем companyId
+        });
         return guest.save();
       })
     );
