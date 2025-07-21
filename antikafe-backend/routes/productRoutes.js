@@ -4,10 +4,10 @@ const productController = require('../controllers/productController');
 const verifyToken = require('../middleware/verifyToken');
 
 // Товары
-router.get('/', productController.getProducts);
-router.post('/', productController.createProduct);
-router.put('/:id', productController.updateProduct);
-router.delete('/:id', productController.deleteProduct);
+router.get('/', verifyToken, productController.getProducts);
+router.post('/', verifyToken, productController.createProduct);
+router.put('/:id', verifyToken, productController.updateProduct);
+router.delete('/:id', verifyToken, productController.deleteProduct);
 
 // Группы
 router.get('/groups', verifyToken, productController.getGroups);
