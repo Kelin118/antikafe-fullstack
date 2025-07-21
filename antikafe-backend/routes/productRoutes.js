@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/productController');
+const verifyToken = require('../middleware/verifyToken');
 
 // Товары
 router.get('/', productController.getProducts);
@@ -9,8 +10,8 @@ router.put('/:id', productController.updateProduct);
 router.delete('/:id', productController.deleteProduct);
 
 // Группы
-router.get('/groups', productController.getGroups);
-router.post('/groups', productController.createGroup);
-router.delete('/groups/:id', productController.deleteGroup);
+router.get('/groups', verifyToken, productController.getGroups);
+router.post('/groups', verifyToken, productController.createGroup);
+router.delete('/groups/:id', verifyToken, productController.deleteGroup);
 
 module.exports = router;
