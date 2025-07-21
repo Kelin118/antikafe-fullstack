@@ -29,12 +29,25 @@ export default function SiteProductsPage() {
   };
 
   const handleProductAdd = async () => {
-    const { name, stock, price, groupId, description } = newProduct;
-    if (!name.trim() || !groupId || !price) return;
-    await axios.post('/products', { name, stock, price, groupId, description });
+  const { name, stock, price, groupId, description } = newProduct;
+  if (!name.trim() || !groupId || !price) return;
+
+  try {
+    await axios.post('/products', {
+      name,
+      stock: Number(stock),
+      price: Number(price),
+      groupId,
+      description,
+    });
     setNewProduct({ name: '', stock: '', price: '', groupId: '', description: '' });
     fetchAll();
-  };
+  } catch (err) {
+    console.error('❌ Ошибка при создании товара:', err.response?.data || err.message);
+    alert('Ошибка: ' + (err.response?.data?.error || 'Неизвестная ошибка'));
+  }
+};
+
 
   const handleProductDelete = async (id) => {
     await axios.delete(`/products/${id}`);
