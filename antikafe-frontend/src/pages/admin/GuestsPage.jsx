@@ -1,50 +1,83 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosInstance';
+import dayjs from 'dayjs';
 
 export default function GuestsPage() {
   const [guests, setGuests] = useState([]);
-  const navigate = useNavigate();
-
-  const fetchGuests = async () => {
-    try {
-      const response = await axios.get('/guests');
-      setGuests(response.data);
-    } catch (error) {
-      console.error('Ошибка при загрузке гостей:', error);
-    }
-  };
+  const [filteredGuests, setFilteredGuests] = useState([]);
+  const [dateFilter, setDateFilter] = useState('');
 
   useEffect(() => {
     fetchGuests();
   }, []);
 
+  const fetchGuests = async () => {
+    try {
+      const response = await axios.get('/guests');
+      setGuests(response.data);
+      setFilteredGuests(response.data);
+    } catch (error) {
+      console.error('Ошибка при получении гостей:', error);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Удалить гостя?')) return;
+    try {
+      await axios.delete(`/guests/${id}`);
+      fetchGuests(); // перезагрузка списка
+    } catch (error) {
+      console.error('Ошибка при удалении гостя:', error);
+    }
+  };
+
+  const handleDateChange = (e) => {
+    const selectedDate = e.target.value;
+    setDateFilter(selectedDate);
+    const filtered = guests.filter((guest) =>
+      dayjs(guest.createdAt).format('YYYY-MM-DD') === selectedDate
+    );
+    setFilteredGuests(filtered);
+  };
+
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-primary">Гости</h1>
+      <h1 className="text-2xl font-bold mb-4">Гости</h1>
+
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-4">
+        <input
+          type="date"
+          value={dateFilter}
+          onChange={handleDateChange}
+          className="border rounded px-3 py-2"
+        />
         <button
-          onClick={() => navigate('/admin/add-group')}
-          className="bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded-xl transition-all"
+          onClick={() => setFilteredGuests(guests)}
+          className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded"
         >
-          Добавить гостя
+          Сбросить фильтр
         </button>
       </div>
 
-      {guests.length === 0 ? (
-        <div className="text-center text-gray-500 mt-10">Гостей пока нет</div>
+      {filteredGuests.length === 0 ? (
+        <p>Нет гостей для отображения</p>
       ) : (
-        <div className="bg-white rounded-xl shadow p-4 space-y-2">
-          {guests.map((guest) => (
-            <div
+        <ul className="space-y-3">
+          {filteredGuests.map((guest) => (
+            <li
               key={guest._id}
-              className="flex items-center justify-between border-b py-2 last:border-b-0"
+              className="flex justify-between items-center p-4 bg-white rounded shadow"
             >
               <span>{guest.name}</span>
-              <span className="text-sm text-gray-400">{new Date(guest.createdAt).toLocaleDateString()}</span>
-            </div>
+              <button
+                onClick={() => handleDelete(guest._id)}
+                className="text-red-600 hover:underline"
+              >
+                Удалить
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );
