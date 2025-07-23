@@ -80,6 +80,21 @@ const handleSubmit = async () => {
 
   return (
     <div className="p-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+  {/* Блок Наличные */}
+  <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
+    <h3 className="text-lg font-semibold mb-2">Оплата наличными</h3>
+    <p>💵 Сумма на начало смены: <span className="font-bold">{getTotal().toLocaleString()} ₸</span></p>
+    <p>💰 Изъятие наличных: <span className="font-bold text-red-600">0 ₸</span></p>
+  </div>
+
+  {/* Блок Картой */}
+  <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
+    <h3 className="text-lg font-semibold mb-2">Оплата картой</h3>
+    <p>💳 Проведено по карте: <span className="font-bold text-blue-600">0 ₸</span></p>
+  </div>
+</div>
+
       <h1 className="text-2xl font-bold mb-4">Управление сменой</h1>
 
       <button
