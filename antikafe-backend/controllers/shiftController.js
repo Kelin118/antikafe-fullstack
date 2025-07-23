@@ -6,6 +6,8 @@ exports.openShift = async (req, res) => {
     const { openingAmount, openingDenominations } = req.body;
     const { userId, companyId } = req.user;
 
+    console.log('[ОТКРЫТИЕ СМЕНЫ]', { companyId, openingAmount }); // ← лог
+
     const existingOpenShift = await Shift.findOne({ companyId, isOpen: true });
     if (existingOpenShift) {
       return res.status(400).json({ message: 'Смена уже открыта' });
@@ -20,11 +22,14 @@ exports.openShift = async (req, res) => {
 
     await shift.save();
 
+    console.log('[СМЕНА СОХРАНЕНА]', shift); // ← лог
+
     res.status(201).json({ message: 'Смена открыта', shift });
   } catch (err) {
     res.status(500).json({ message: 'Ошибка открытия смены', error: err.message });
   }
 };
+
 
 
 exports.closeShift = async (req, res) => {

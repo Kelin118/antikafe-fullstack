@@ -16,12 +16,16 @@ router.get('/status', verifyToken, async (req, res) => {
   try {
     const { companyId } = req.user;
     const openShift = await Shift.findOne({ companyId, isOpen: true });
+
+    console.log('[ПРОВЕРКА СТАТУСА]', { companyId, isOpen: !!openShift }); // ← лог
+
     res.json({ isOpen: !!openShift });
   } catch (err) {
     console.error('Ошибка при проверке смены:', err);
     res.status(500).json({ message: 'Ошибка проверки статуса' });
   }
 });
+
 
 router.get('/last-denominations', verifyToken, async (req, res) => {
   try {
