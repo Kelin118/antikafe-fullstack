@@ -1,4 +1,4 @@
-// 💡 Компонент AddGuestsAndProducts — обновлённый UI с группами товаров в сайдбаре и правой панелью гостей
+// 💡 Обновлённый AddGuestsAndProducts — 2/3 слева (товары), 1/3 справа (гости)
 import { useEffect, useState } from 'react';
 import axios from '../../utils/axiosInstance';
 import { Dialog } from '@headlessui/react';
@@ -47,11 +47,9 @@ export default function AddGuestsAndProducts() {
     setGuests(updatedGuests);
   };
 
-  const totalSum = guests.reduce((sum, g) => {
-    return (
-      sum + g.products.reduce((pSum, p) => pSum + p.price, 0)
-    );
-  }, 0);
+  const totalSum = guests.reduce((sum, g) => (
+    sum + g.products.reduce((pSum, p) => pSum + p.price, 0)
+  ), 0);
 
   const handleSubmit = async () => {
     try {
@@ -75,39 +73,49 @@ export default function AddGuestsAndProducts() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
-      {/* ЛЕВАЯ КОЛОНКА — Группы и Товары */}
-      <div className="col-span-1 bg-white rounded shadow p-4 h-full">
-        <h2 className="text-lg font-semibold mb-2">📦 Группы</h2>
-        <ul className="space-y-2 mb-4">
-          {groups.map(g => (
-            <li key={g._id}>
-              <button
-                className={`w-full text-left px-3 py-2 rounded ${g._id === selectedGroupId ? 'bg-primary text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
-                onClick={() => setSelectedGroupId(g._id)}
-              >
-                {g.name}
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div className="grid grid-cols-2 gap-4">
-          {products.filter(p => p.groupId === selectedGroupId).map(p => (
-            <div key={p._id} className="border p-2 rounded shadow-sm">
-              <div className="font-semibold">{p.name}</div>
-              <div className="text-sm text-gray-600">{p.price} ₸</div>
-              <button
-                onClick={() => addProductToGuest(p)}
-                className="mt-2 w-full bg-green-500 text-white py-1 rounded"
-              >
-                ➕ Добавить
-              </button>
-            </div>
-          ))}
+      {/* ТОВАРЫ И ГРУППЫ — 2/3 ширины */}
+      <div className="col-span-2 bg-white rounded shadow p-4 h-full">
+        <h2 className="text-lg font-semibold mb-2">📦 Группы товаров</h2>
+        <div className="flex gap-4">
+          {/* Сайдбар групп */}
+          <div className="w-1/4 border-r pr-4">
+            <ul className="space-y-2">
+              {groups.map(g => (
+                <li key={g._id}>
+                  <button
+                    className={`w-full text-left px-3 py-2 rounded ${g._id === selectedGroupId ? 'bg-primary text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                    onClick={() => setSelectedGroupId(g._id)}
+                  >
+                    {g.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Товары */}
+          <div className="w-3/4 grid grid-cols-2 gap-4">
+            {products.filter(p => p.groupId?.toString() === selectedGroupId).map(p => (
+              <div key={p._id} className="border p-3 rounded shadow-sm">
+                <div className="font-semibold">{p.name}</div>
+                <div className="text-sm text-gray-600">{p.price} ₸</div>
+                <button
+                  onClick={() => addProductToGuest(p)}
+                  className="mt-2 w-full bg-green-500 text-white py-1 rounded"
+                >
+                  ➕ Добавить
+                </button>
+              </div>
+            ))}
+            {products.filter(p => p.groupId?.toString() === selectedGroupId).length === 0 && (
+              <div className="text-gray-400 col-span-2">Нет товаров в этой группе</div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* ПРАВАЯ КОЛОНКА — Гости и итоги */}
-      <div className="col-span-2 bg-white rounded shadow p-4">
+      {/* ГОСТИ — 1/3 ширины */}
+      <div className="col-span-1 bg-white rounded shadow p-4">
         <div className="flex justify-between mb-4">
           <h2 className="text-lg font-semibold">👥 Гости</h2>
           <button
@@ -150,7 +158,7 @@ export default function AddGuestsAndProducts() {
         )}
       </div>
 
-      {/* МОДАЛКА — Добавить гостя */}
+      {/* МОДАЛКИ */}
       <Dialog open={isGuestModalOpen} onClose={() => setIsGuestModalOpen(false)} className="fixed inset-0 z-50 flex items-center justify-center">
         <Dialog.Panel className="bg-white p-6 rounded shadow w-full max-w-md">
           <Dialog.Title className="text-xl font-bold mb-4">Добавить гостя</Dialog.Title>
@@ -164,11 +172,9 @@ export default function AddGuestsAndProducts() {
         </Dialog.Panel>
       </Dialog>
 
-      {/* МОДАЛКА — Оплата */}
       <Dialog open={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} className="fixed inset-0 z-50 flex items-center justify-center">
         <Dialog.Panel className="bg-white p-6 rounded shadow w-full max-w-md">
           <Dialog.Title className="text-xl font-bold mb-4">Выберите способ оплаты</Dialog.Title>
-
           <select
             value={paymentType}
             onChange={(e) => setPaymentType(e.target.value)}
@@ -178,7 +184,6 @@ export default function AddGuestsAndProducts() {
             <option value="card">Карта</option>
             <option value="mixed">Смешанная</option>
           </select>
-
           {paymentType === 'mixed' && (
             <div className="grid grid-cols-2 gap-4 mb-4">
               <input
@@ -197,7 +202,6 @@ export default function AddGuestsAndProducts() {
               />
             </div>
           )}
-
           <button onClick={handleSubmit} className="bg-secondary text-white w-full py-2 rounded">
             Подтвердить оплату
           </button>
