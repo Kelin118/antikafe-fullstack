@@ -8,5 +8,6 @@ router.get('/', verifyToken, guestController.getGuests);
 router.post('/', verifyToken, guestController.addGuest);
 router.post('/group', verifyToken, guestController.addGuestGroup);
 router.delete('/:id', verifyToken, guestController.deleteGuest);
-
+router.post('/group', guestController.saveGuestGroup);
+router.get('/groups', guestController.getGuestGroups);
 module.exports = router;

@@ -40,6 +40,8 @@ app.use('/api/products', productRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/shift', shiftRoutes);
+app.use('/api/guest-groups', require('./routes/guestRoutes'));
+
 
 // 📦 Подключение к MongoDB и запуск сервера
 mongoose.connect(process.env.MONGO_URI, {

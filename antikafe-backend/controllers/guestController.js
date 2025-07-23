@@ -1,13 +1,26 @@
 const Guest = require('../models/Guest');
 const { v4: uuidv4 } = require('uuid'); // вверху файла
+const GuestGroup = require('../models/GuestGroup');
 
 // GET /guests
 exports.getGuests = async (req, res) => {
   try {
-    const guests = await Guest.find({ companyId: req.user.companyId }); // 👈
-    res.json(guests);
-  } catch (error) {
-    res.status(500).json({ message: 'Ошибка при получении гостей', error });
+    const guests = await Guest.find().sort({ createdAt: -1 });
+
+    const guestsWithProducts = await Promise.all(
+      guests.map(async (guest) => {
+        const populatedProducts = await Product.find({ _id: { $in: guest.products } });
+        return {
+          ...guest.toObject(),
+          products: populatedProducts,
+        };
+      })
+    );
+
+    res.json(guestsWithProducts);
+  } catch (err) {
+    console.error('❌ Ошибка при получении гостей:', err);
+    res.status(500).json({ error: 'Ошибка при получении гостей' });
   }
 };
 
@@ -43,7 +56,7 @@ exports.deleteGuest = async (req, res) => {
   }
 };
 
-// POST /guests/group
+/// POST /guests/group
 exports.addGuestGroup = async (req, res) => {
   const { guests } = req.body;
 
@@ -51,15 +64,16 @@ exports.addGuestGroup = async (req, res) => {
     return res.status(400).json({ error: 'Invalid guest list' });
   }
 
-  const groupId = uuidv4(); // 👈 создаём уникальный идентификатор группы
+  const groupId = uuidv4();
 
   try {
     const createdGuests = await Promise.all(
-      guests.map(name => {
+      guests.map(({ name, products }) => {
         const guest = new Guest({
           name,
           groupId,
-          companyId: req.user.companyId // 👈 обязательно добавляем companyId
+          products,
+          companyId: req.user.companyId
         });
         return guest.save();
       })
@@ -69,5 +83,39 @@ exports.addGuestGroup = async (req, res) => {
   } catch (err) {
     console.error('Error saving group:', err);
     res.status(500).json({ error: 'Failed to save guest group' });
+  }
+};
+
+// Сохранить группу гостей
+exports.saveGuestGroup = async (req, res) => {
+  try {
+    const { guests, paymentType, cashAmount = 0, cardAmount = 0 } = req.body;
+
+    const totalSum = guests.reduce(
+      (sum, g) => sum + g.products.reduce((s, p) => s + p.price, 0),
+      0
+    );
+
+    const group = await GuestGroup.create({
+      guests,
+      paymentType,
+      cashAmount,
+      cardAmount,
+      totalSum
+    });
+
+    res.status(201).json(group);
+  } catch (error) {
+    console.error('❌ Ошибка при сохранении группы гостей:', error);
+    res.status(500).json({ error: 'Ошибка при сохранении группы гостей' });
+  }
+};
+exports.getGuestGroups = async (req, res) => {
+  try {
+    const groups = await GuestGroup.find().sort({ createdAt: -1 });
+    res.json(groups);
+  } catch (error) {
+    console.error('❌ Ошибка при получении групп гостей:', error);
+    res.status(500).json({ error: 'Ошибка при загрузке групп' });
   }
 };
