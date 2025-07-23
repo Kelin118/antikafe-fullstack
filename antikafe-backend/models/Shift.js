@@ -26,6 +26,25 @@ const shiftSchema = new mongoose.Schema({
     of: Number,
     default: {}
   },
+
+  // 🆕 Новые поля
+  cashWithdrawal: {
+    type: Number,
+    default: 0,
+  },
+  cardAmountCalculated: {
+    type: Number,
+    default: 0,
+  },
+  cardAmountEntered: {
+    type: Number,
+    default: 0,
+  },
+  cardMismatch: {
+    type: Number,
+    default: 0,
+  },
+
   openedAt: {
     type: Date,
     default: Date.now,

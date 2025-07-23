@@ -35,5 +35,24 @@ router.get('/last-denominations', verifyToken, async (req, res) => {
   } catch {
     res.status(500).json({ message: 'Ошибка при получении данных' });
   }
+  
 });
+router.get('/last', verifyToken, async (req, res) => {
+  try {
+    const { companyId } = req.user;
+    const lastShift = await Shift.find({ companyId })
+      .sort({ openedAt: -1 })
+      .limit(1)
+      .lean();
+
+    if (!lastShift.length) {
+      return res.json(null);
+    }
+
+    res.json(lastShift[0]);
+  } catch (err) {
+    res.status(500).json({ message: 'Ошибка получения последней смены' });
+  }
+});
+
 module.exports = router;

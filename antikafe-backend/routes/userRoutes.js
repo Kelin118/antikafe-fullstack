@@ -65,4 +65,18 @@ router.post('/', verifyToken, checkRole('admin'), async (req, res) => {
   }
 });
 
+router.get('/all', verifyToken, async (req, res) => {
+  try {
+    const { companyId } = req.user;
+    const shifts = await Shift.find({ companyId })
+      .sort({ openedAt: -1 })
+      .populate('cashierId', 'name') // чтобы отобразить имя кассира
+      .lean();
+    res.json(shifts);
+  } catch (err) {
+    res.status(500).json({ message: 'Ошибка получения истории смен' });
+  }
+});
+
+
 module.exports = router;
