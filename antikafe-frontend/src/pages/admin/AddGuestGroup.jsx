@@ -95,21 +95,31 @@ export default function AddGuestsAndProducts() {
 
           {/* Товары */}
           <div className="w-3/4 grid grid-cols-2 gap-4">
-            {products.filter(p => p.groupId?.toString() === selectedGroupId).map(p => (
-              <div key={p._id} className="border p-3 rounded shadow-sm">
-                <div className="font-semibold">{p.name}</div>
-                <div className="text-sm text-gray-600">{p.price} ₸</div>
-                <button
-                  onClick={() => addProductToGuest(p)}
-                  className="mt-2 w-full bg-green-500 text-white py-1 rounded"
-                >
-                  ➕ Добавить
-                </button>
-              </div>
-            ))}
-            {products.filter(p => p.groupId?.toString() === selectedGroupId).length === 0 && (
-              <div className="text-gray-400 col-span-2">Нет товаров в этой группе</div>
-            )}
+  {products
+    .filter((p) => {
+      const groupId = typeof p.groupId === 'object' ? p.groupId._id : p.groupId;
+      return groupId === selectedGroupId;
+    })
+    .map((p) => (
+      <div key={p._id} className="border p-2 rounded shadow-sm">
+        <div className="font-semibold">{p.name}</div>
+        <div className="text-sm text-gray-600">{p.price} ₸</div>
+        <button
+          onClick={() => addProductToGuest(p)}
+          className="mt-2 w-full bg-green-500 text-white py-1 rounded"
+        >
+          ➕ Добавить
+        </button>
+      </div>
+    ))
+  }
+
+  {products.filter((p) => {
+    const groupId = typeof p.groupId === 'object' ? p.groupId._id : p.groupId;
+    return groupId === selectedGroupId;
+  }).length === 0 && (
+    <div className="text-gray-400 col-span-2">Нет товаров в этой группе</div>
+  )}
           </div>
         </div>
       </div>
