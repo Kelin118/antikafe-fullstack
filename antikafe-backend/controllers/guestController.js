@@ -1,11 +1,12 @@
 const Guest = require('../models/Guest');
 const { v4: uuidv4 } = require('uuid'); // вверху файла
 const GuestGroup = require('../models/GuestGroup');
+const Product = require('../models/Product'); // ← Добавь это!
 
 // GET /guests
 exports.getGuests = async (req, res) => {
   try {
-    const guests = await Guest.find().sort({ createdAt: -1 });
+    const guests = await Guest.find({ companyId: req.user.companyId }).sort({ createdAt: -1 });
 
     const guestsWithProducts = await Promise.all(
       guests.map(async (guest) => {
