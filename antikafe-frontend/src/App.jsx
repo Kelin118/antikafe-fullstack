@@ -17,6 +17,7 @@ import SiteProductsPage from './pages/site/SiteProductsPage';
 import SiteBookingPage from './pages/site/SiteBookingPage';
 import SiteSystemPage from './pages/site/SiteSystemPage';
 import SiteShift from './pages/site/SiteShift'; // история смен
+import SiteFinancePage from './pages/site/SiteFinancePage'; // 💰
 
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
@@ -48,6 +49,7 @@ export default function App() {
                 <Route path="bookings" element={<SiteBookingPage />} />
                 <Route path="system" element={<SiteSystemPage />} />
                 <Route path="shifts" element={<SiteShift />} />
+                <Route path="finance" element={<SiteFinancePage />} /> {/* ✅ */}
               </Route>
 
               {/* 🔐 Админка (только для admin) */}

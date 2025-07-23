@@ -24,6 +24,8 @@ export default function SiteLayout() {
   <Link to="/site/products" className="hover:text-primary dark:hover:text-yellow-400">Продукты</Link>
   <Link to="/site/system" className="hover:text-primary dark:hover:text-yellow-400">Система</Link>
   <Link to="/site/shifts" className="hover:text-primary dark:hover:text-yellow-400">История смен</Link> {/* 🔥 Новая ссылка */}
+  <Link to="/site/finance" className="hover:text-primary dark:hover:text-yellow-400">Финансы</Link>
+
 
   {/* Переключатель темы */}
   <button
