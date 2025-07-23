@@ -35,7 +35,8 @@ export default function SiteProductsPage() {
   };
 
   const handleGroupDelete = async (id) => {
-    if (confirm('Удалить эту группу?')) {
+    // eslint-disable-next-line no-restricted-globals
+    if (confirm('Удалить эту группу?'))  {
       await axios.delete(`/products/groups/${id}`);
       fetchAll();
     }
@@ -60,7 +61,8 @@ export default function SiteProductsPage() {
   };
 
   const handleProductDelete = async (id) => {
-    if (confirm('Удалить товар?')) {
+      // eslint-disable-next-line no-restricted-globals
+      if (confirm('Удалить товар?')) {
       await axios.delete(`/products/${id}`);
       fetchAll();
     }
