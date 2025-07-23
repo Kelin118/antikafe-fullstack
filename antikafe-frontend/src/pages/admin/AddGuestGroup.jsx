@@ -1,216 +1,208 @@
+// 💡 Компонент AddGuestsAndProducts — обновлённый UI с группами товаров в сайдбаре и правой панелью гостей
 import { useEffect, useState } from 'react';
 import axios from '../../utils/axiosInstance';
-import { useNavigate } from 'react-router-dom';
+import { Dialog } from '@headlessui/react';
 
 export default function AddGuestsAndProducts() {
-  const [guestName, setGuestName] = useState('');
-  const [guestList, setGuestList] = useState([]);
   const [groups, setGroups] = useState([]);
-  const [discount, setDiscount] = useState('');
+  const [selectedGroupId, setSelectedGroupId] = useState(null);
+  const [products, setProducts] = useState([]);
+
+  const [guests, setGuests] = useState([]);
+  const [selectedGuestIndex, setSelectedGuestIndex] = useState(null);
+
+  const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
+  const [newGuestName, setNewGuestName] = useState('');
+
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentType, setPaymentType] = useState('cash');
   const [cashAmount, setCashAmount] = useState('');
   const [cardAmount, setCardAmount] = useState('');
 
-  const [newProduct, setNewProduct] = useState({
-    name: '', stock: '', price: '', groupId: '', description: ''
-  });
-
-  const navigate = useNavigate();
-
   useEffect(() => {
     const fetchGroups = async () => {
-      try {
-        const res = await axios.get('/products/groups');
-        setGroups(res.data);
-      } catch (err) {
-        console.error('Ошибка при загрузке групп:', err);
-      }
+      const res = await axios.get('/products/groups');
+      setGroups(res.data);
+      if (res.data[0]) setSelectedGroupId(res.data[0]._id);
+    };
+    const fetchProducts = async () => {
+      const res = await axios.get('/products');
+      setProducts(res.data);
     };
     fetchGroups();
+    fetchProducts();
   }, []);
 
-  const handleAddGuest = (e) => {
-    e.preventDefault();
-    const trimmed = guestName.trim();
-    if (trimmed) {
-      setGuestList([...guestList, trimmed]);
-      setGuestName('');
-    }
+  const addGuest = () => {
+    if (!newGuestName.trim()) return;
+    setGuests([...guests, { name: newGuestName.trim(), products: [] }]);
+    setNewGuestName('');
+    setIsGuestModalOpen(false);
   };
 
-  const handleSubmitGuests = async () => {
-    if (!guestList.length) return;
+  const addProductToGuest = (product) => {
+    if (selectedGuestIndex === null) return alert('Выберите гостя');
+    const updatedGuests = [...guests];
+    updatedGuests[selectedGuestIndex].products.push(product);
+    setGuests(updatedGuests);
+  };
 
-    const payload = {
-      guests: guestList,
-      paymentType,
-      discount: parseFloat(discount) || 0,
-    };
+  const totalSum = guests.reduce((sum, g) => {
+    return (
+      sum + g.products.reduce((pSum, p) => pSum + p.price, 0)
+    );
+  }, 0);
 
-    if (paymentType === 'mixed') {
-      payload.cashAmount = parseFloat(cashAmount) || 0;
-      payload.cardAmount = parseFloat(cardAmount) || 0;
-    }
-
+  const handleSubmit = async () => {
     try {
+      const payload = {
+        guests: guests.map(g => g.name),
+        paymentType,
+        discount: 0,
+        ...(paymentType === 'mixed' && {
+          cashAmount: parseFloat(cashAmount) || 0,
+          cardAmount: parseFloat(cardAmount) || 0
+        })
+      };
       await axios.post('/guests/group', payload);
-      setGuestList([]);
-      setDiscount('');
-      setCashAmount('');
-      setCardAmount('');
-      setPaymentType('cash');
-      alert('Гости добавлены');
+      alert('Оплата проведена');
+      setGuests([]);
+      setIsPaymentModalOpen(false);
     } catch (err) {
-      console.error('Ошибка при добавлении гостей:', err);
-    }
-  };
-
-  const handleAddProduct = async () => {
-    const { name, stock, price, groupId, description } = newProduct;
-    if (!name.trim() || !groupId || !price) return;
-
-    try {
-      await axios.post('/products', {
-        name,
-        stock: Number(stock),
-        price: Number(price),
-        groupId,
-        description
-      });
-      setNewProduct({ name: '', stock: '', price: '', groupId: '', description: '' });
-      alert('Товар добавлен');
-    } catch (err) {
-      console.error('Ошибка при добавлении товара:', err.response?.data || err.message);
+      console.error('Ошибка оплаты:', err);
     }
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
-      <div className="bg-white rounded-xl shadow p-6 border">
-        <h2 className="text-xl font-bold text-primary mb-4">👥 Добавить гостей</h2>
-        <form onSubmit={handleAddGuest} className="flex gap-3 mb-4">
-          <input
-            type="text"
-            value={guestName}
-            onChange={(e) => setGuestName(e.target.value)}
-            placeholder="Имя гостя и Enter"
-            className="flex-1 px-4 py-2 border rounded focus:outline-none"
-          />
-          <button
-            type="submit"
-            className="bg-primary text-white px-5 py-2 rounded hover:bg-green-700 transition"
-          >
-            +
-          </button>
-        </form>
-
-        {guestList.length > 0 && (
-          <div className="space-y-4">
-            <div>
-              <label className="block font-semibold">Способ оплаты:</label>
-              <select
-                value={paymentType}
-                onChange={(e) => setPaymentType(e.target.value)}
-                className="w-full border px-4 py-2 rounded"
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
+      {/* ЛЕВАЯ КОЛОНКА — Группы и Товары */}
+      <div className="col-span-1 bg-white rounded shadow p-4 h-full">
+        <h2 className="text-lg font-semibold mb-2">📦 Группы</h2>
+        <ul className="space-y-2 mb-4">
+          {groups.map(g => (
+            <li key={g._id}>
+              <button
+                className={`w-full text-left px-3 py-2 rounded ${g._id === selectedGroupId ? 'bg-primary text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                onClick={() => setSelectedGroupId(g._id)}
               >
-                <option value="cash">Наличные</option>
-                <option value="card">Карта</option>
-                <option value="mixed">Смешанная</option>
-              </select>
+                {g.name}
+              </button>
+            </li>
+          ))}
+        </ul>
+        <div className="grid grid-cols-2 gap-4">
+          {products.filter(p => p.groupId === selectedGroupId).map(p => (
+            <div key={p._id} className="border p-2 rounded shadow-sm">
+              <div className="font-semibold">{p.name}</div>
+              <div className="text-sm text-gray-600">{p.price} ₸</div>
+              <button
+                onClick={() => addProductToGuest(p)}
+                className="mt-2 w-full bg-green-500 text-white py-1 rounded"
+              >
+                ➕ Добавить
+              </button>
             </div>
+          ))}
+        </div>
+      </div>
 
-            {paymentType === 'mixed' && (
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="number"
-                  placeholder="Наличные"
-                  value={cashAmount}
-                  onChange={(e) => setCashAmount(e.target.value)}
-                  className="border px-4 py-2 rounded"
-                />
-                <input
-                  type="number"
-                  placeholder="Карта"
-                  value={cardAmount}
-                  onChange={(e) => setCardAmount(e.target.value)}
-                  className="border px-4 py-2 rounded"
-                />
-              </div>
+      {/* ПРАВАЯ КОЛОНКА — Гости и итоги */}
+      <div className="col-span-2 bg-white rounded shadow p-4">
+        <div className="flex justify-between mb-4">
+          <h2 className="text-lg font-semibold">👥 Гости</h2>
+          <button
+            onClick={() => setIsGuestModalOpen(true)}
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+          >
+            + Добавить гостя
+          </button>
+        </div>
+
+        {guests.length === 0 && <p className="text-gray-500">Гости не добавлены</p>}
+
+        {guests.map((g, index) => (
+          <div
+            key={index}
+            onClick={() => setSelectedGuestIndex(index)}
+            className={`p-3 rounded mb-3 cursor-pointer border ${selectedGuestIndex === index ? 'border-blue-500 bg-blue-50' : 'bg-gray-50'}`}
+          >
+            <div className="font-semibold">{g.name}</div>
+            {g.products.length > 0 && (
+              <ul className="text-sm list-disc list-inside text-gray-700">
+                {g.products.map((p, idx) => (
+                  <li key={idx}>{p.name} — {p.price} ₸</li>
+                ))}
+              </ul>
             )}
+          </div>
+        ))}
 
-            <input
-              type="number"
-              placeholder="Скидка (в тенге)"
-              value={discount}
-              onChange={(e) => setDiscount(e.target.value)}
-              className="w-full border px-4 py-2 rounded"
-            />
-
-            <ul className="list-disc list-inside mb-4 bg-gray-100 p-3 rounded">
-              {guestList.map((name, index) => (
-                <li key={index}>{name}</li>
-              ))}
-            </ul>
-
+        {guests.length > 0 && (
+          <div className="mt-6">
+            <div className="font-bold text-xl mb-2">Итого: {totalSum} ₸</div>
             <button
-              onClick={handleSubmitGuests}
-              className="bg-secondary text-white px-6 py-2 rounded hover:bg-blue-800 transition w-full"
+              onClick={() => setIsPaymentModalOpen(true)}
+              className="w-full bg-secondary text-white py-3 rounded text-lg"
             >
-              Сохранить группу
+              💳 Принять оплату
             </button>
           </div>
         )}
       </div>
 
-      <div className="bg-white rounded-xl shadow p-6 border">
-        <h2 className="text-xl font-bold text-primary mb-4">🛒 Добавить товар</h2>
-        <div className="grid grid-cols-1 gap-4">
+      {/* МОДАЛКА — Добавить гостя */}
+      <Dialog open={isGuestModalOpen} onClose={() => setIsGuestModalOpen(false)} className="fixed inset-0 z-50 flex items-center justify-center">
+        <Dialog.Panel className="bg-white p-6 rounded shadow w-full max-w-md">
+          <Dialog.Title className="text-xl font-bold mb-4">Добавить гостя</Dialog.Title>
           <input
-            value={newProduct.name}
-            onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-            placeholder="Название товара"
-            className="border px-4 py-2 rounded"
+            value={newGuestName}
+            onChange={(e) => setNewGuestName(e.target.value)}
+            placeholder="Имя гостя"
+            className="w-full border px-4 py-2 rounded mb-4"
           />
-          <input
-            value={newProduct.stock}
-            onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
-            placeholder="Остаток"
-            type="number"
-            className="border px-4 py-2 rounded"
-          />
-          <input
-            value={newProduct.price}
-            onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-            placeholder="Цена"
-            type="number"
-            className="border px-4 py-2 rounded"
-          />
+          <button onClick={addGuest} className="bg-primary text-white px-4 py-2 rounded w-full">Добавить</button>
+        </Dialog.Panel>
+      </Dialog>
+
+      {/* МОДАЛКА — Оплата */}
+      <Dialog open={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} className="fixed inset-0 z-50 flex items-center justify-center">
+        <Dialog.Panel className="bg-white p-6 rounded shadow w-full max-w-md">
+          <Dialog.Title className="text-xl font-bold mb-4">Выберите способ оплаты</Dialog.Title>
+
           <select
-            value={newProduct.groupId}
-            onChange={(e) => setNewProduct({ ...newProduct, groupId: e.target.value })}
-            className="border px-4 py-2 rounded"
+            value={paymentType}
+            onChange={(e) => setPaymentType(e.target.value)}
+            className="w-full border px-4 py-2 rounded mb-4"
           >
-            <option value="">Выбери группу</option>
-            {groups.map((g) => (
-              <option key={g._id} value={g._id}>
-                {g.name}
-              </option>
-            ))}
+            <option value="cash">Наличные</option>
+            <option value="card">Карта</option>
+            <option value="mixed">Смешанная</option>
           </select>
-          <input
-            value={newProduct.description}
-            onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-            placeholder="Описание"
-            className="border px-4 py-2 rounded"
-          />
-          <button
-            onClick={handleAddProduct}
-            className="bg-primary text-white px-4 py-2 rounded hover:bg-green-700 transition"
-          >
-            Добавить товар
+
+          {paymentType === 'mixed' && (
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <input
+                type="number"
+                placeholder="Наличные"
+                value={cashAmount}
+                onChange={(e) => setCashAmount(e.target.value)}
+                className="border px-4 py-2 rounded"
+              />
+              <input
+                type="number"
+                placeholder="Карта"
+                value={cardAmount}
+                onChange={(e) => setCardAmount(e.target.value)}
+                className="border px-4 py-2 rounded"
+              />
+            </div>
+          )}
+
+          <button onClick={handleSubmit} className="bg-secondary text-white w-full py-2 rounded">
+            Подтвердить оплату
           </button>
-        </div>
-      </div>
+        </Dialog.Panel>
+      </Dialog>
     </div>
   );
 }
