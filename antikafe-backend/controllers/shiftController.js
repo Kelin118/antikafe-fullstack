@@ -1,13 +1,10 @@
 const Shift = require('../models/Shift');
+const Company = require('../models/Company'); // не забудь импортировать
 
 exports.openShift = async (req, res) => {
   try {
     const { openingAmount, openingDenominations } = req.body;
     const { userId, companyId } = req.user;
-
-    if (openingAmount === undefined) {
-      return res.status(400).json({ message: 'Введите сумму кассы' });
-    }
 
     const existingOpenShift = await Shift.findOne({ companyId, isOpen: true });
     if (existingOpenShift) {
@@ -29,17 +26,13 @@ exports.openShift = async (req, res) => {
   }
 };
 
+
 exports.closeShift = async (req, res) => {
   try {
     const { closingAmount, closingDenominations } = req.body;
     const { userId, companyId } = req.user;
 
-    if (closingAmount === undefined) {
-      return res.status(400).json({ message: 'Введите сумму закрытия кассы' });
-    }
-
     const openShift = await Shift.findOne({ companyId, isOpen: true });
-
     if (!openShift) {
       return res.status(404).json({ message: 'Нет открытой смены для закрытия' });
     }
@@ -50,6 +43,11 @@ exports.closeShift = async (req, res) => {
     openShift.isOpen = false;
 
     await openShift.save();
+
+    // 💾 Обновим компанию
+    await Company.findByIdAndUpdate(companyId, {
+      lastDenominations: closingDenominations,
+    });
 
     res.status(200).json({ message: 'Смена успешно закрыта', shift: openShift });
   } catch (err) {

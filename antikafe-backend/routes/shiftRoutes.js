@@ -3,6 +3,7 @@ const router = express.Router();
 const { openShift, closeShift } = require('../controllers/shiftController');
 const verifyToken = require('../middleware/verifyToken');
 const Shift = require('../models/Shift'); // ✅ Добавляем импорт модели
+const Company = require('../models/Company'); 
 
 // Открытие смены
 router.post('/open', verifyToken, openShift);
@@ -22,4 +23,13 @@ router.get('/status', verifyToken, async (req, res) => {
   }
 });
 
+router.get('/last-denominations', verifyToken, async (req, res) => {
+  try {
+    const { companyId } = req.user;
+    const company = await Company.findById(companyId);
+    res.json(company?.lastDenominations || {});
+  } catch {
+    res.status(500).json({ message: 'Ошибка при получении данных' });
+  }
+});
 module.exports = router;
