@@ -221,6 +221,16 @@ export default function AddGuestsAndProducts() {
           </button>
         </Dialog.Panel>
       </Dialog>
+      {guests.length > 0 && (
+      <div className="mt-4 flex justify-end">
+        <button
+          onClick={handleSubmit}
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded shadow"
+        >
+          💾 Сохранить
+        </button>
+      </div>
+      )}
     </div>
   );
 }
