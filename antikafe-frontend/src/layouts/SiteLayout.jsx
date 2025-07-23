@@ -19,34 +19,36 @@ export default function SiteLayout() {
         <h1 className="text-xl font-bold text-primary dark:text-white">📋 Панель антикафе</h1>
 
         <nav className="flex gap-3 items-center">
-          <Link to="/site/home" className="hover:text-primary dark:hover:text-yellow-400">Главная</Link>
-          <Link to="/site/bookings" className="hover:text-primary dark:hover:text-yellow-400">Бронирования</Link>
-          <Link to="/site/products" className="hover:text-primary dark:hover:text-yellow-400">Продукты</Link>
-          <Link to="/site/system" className="hover:text-primary dark:hover:text-yellow-400">Система</Link>
+  <Link to="/site/home" className="hover:text-primary dark:hover:text-yellow-400">Главная</Link>
+  <Link to="/site/bookings" className="hover:text-primary dark:hover:text-yellow-400">Бронирования</Link>
+  <Link to="/site/products" className="hover:text-primary dark:hover:text-yellow-400">Продукты</Link>
+  <Link to="/site/system" className="hover:text-primary dark:hover:text-yellow-400">Система</Link>
+  <Link to="/site/shifts" className="hover:text-primary dark:hover:text-yellow-400">История смен</Link> {/* 🔥 Новая ссылка */}
 
-          {/* Переключатель темы */}
-          <button
-            onClick={toggleTheme}
-            className="text-xl px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-            title="Переключить тему"
-          >
-            {theme === 'light' ? '🌙' : '☀️'}
-          </button>
+  {/* Переключатель темы */}
+  <button
+    onClick={toggleTheme}
+    className="text-xl px-2 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+    title="Переключить тему"
+  >
+    {theme === 'light' ? '🌙' : '☀️'}
+  </button>
 
-          <button
-            onClick={() => navigate('/admin')}
-            className="text-sm bg-accent px-3 py-1 rounded hover:bg-yellow-400"
-          >
-            Перейти в веб-приложение
-          </button>
+  <button
+    onClick={() => navigate('/admin')}
+    className="text-sm bg-accent px-3 py-1 rounded hover:bg-yellow-400"
+  >
+    Перейти в веб-приложение
+  </button>
 
-          <button
-            onClick={handleLogout}
-            className="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-          >
-            Выйти
-          </button>
-        </nav>
+  <button
+    onClick={handleLogout}
+    className="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+  >
+    Выйти
+  </button>
+</nav>
+
       </header>
 
       {/* 🧩 Контент */}

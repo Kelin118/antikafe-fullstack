@@ -16,6 +16,7 @@ import SiteHome from './pages/site/SiteHome';
 import SiteProductsPage from './pages/site/SiteProductsPage';
 import SiteBookingPage from './pages/site/SiteBookingPage';
 import SiteSystemPage from './pages/site/SiteSystemPage';
+import SiteShift from './pages/site/SiteShift'; // история смен
 
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
@@ -46,6 +47,7 @@ export default function App() {
                 <Route path="products" element={<SiteProductsPage />} />
                 <Route path="bookings" element={<SiteBookingPage />} />
                 <Route path="system" element={<SiteSystemPage />} />
+                <Route path="shifts" element={<SiteShift />} />
               </Route>
 
               {/* 🔐 Админка (только для admin) */}
