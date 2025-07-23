@@ -2,17 +2,25 @@ const Shift = require('../models/Shift');
 
 exports.openShift = async (req, res) => {
   try {
-    const { openingAmount } = req.body;
+    const { openingAmount, openingDenominations } = req.body;
     const { userId, companyId } = req.user;
 
-    if (!openingAmount) return res.status(400).json({ message: 'Введите сумму кассы' });
+    if (openingAmount === undefined) {
+      return res.status(400).json({ message: 'Введите сумму кассы' });
+    }
 
     const existingOpenShift = await Shift.findOne({ companyId, isOpen: true });
     if (existingOpenShift) {
       return res.status(400).json({ message: 'Смена уже открыта' });
     }
 
-    const shift = new Shift({ companyId, cashierId: userId, openingAmount });
+    const shift = new Shift({
+      companyId,
+      cashierId: userId,
+      openingAmount,
+      openingDenominations
+    });
+
     await shift.save();
 
     res.status(201).json({ message: 'Смена открыта', shift });
@@ -23,8 +31,12 @@ exports.openShift = async (req, res) => {
 
 exports.closeShift = async (req, res) => {
   try {
-    const { closingAmount } = req.body;
+    const { closingAmount, closingDenominations } = req.body;
     const { userId, companyId } = req.user;
+
+    if (closingAmount === undefined) {
+      return res.status(400).json({ message: 'Введите сумму закрытия кассы' });
+    }
 
     const openShift = await Shift.findOne({ companyId, isOpen: true });
 
@@ -33,6 +45,7 @@ exports.closeShift = async (req, res) => {
     }
 
     openShift.closingAmount = closingAmount;
+    openShift.closingDenominations = closingDenominations;
     openShift.closedAt = new Date();
     openShift.isOpen = false;
 

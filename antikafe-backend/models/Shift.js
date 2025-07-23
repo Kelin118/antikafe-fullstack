@@ -15,11 +15,21 @@ const shiftSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  openingDenominations: {
+    type: Map,
+    of: Number,
+    default: {}
+  },
+  closingAmount: Number,
+  closingDenominations: {
+    type: Map,
+    of: Number,
+    default: {}
+  },
   openedAt: {
     type: Date,
     default: Date.now,
   },
-  closingAmount: Number,
   closedAt: Date,
   isOpen: {
     type: Boolean,
