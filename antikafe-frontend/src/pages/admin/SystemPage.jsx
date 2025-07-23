@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import axios from '../../utils/axiosInstance';
 
 const denominations = [5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5, 1];
@@ -9,10 +9,15 @@ export default function SystemPage() {
   const [modalType, setModalType] = useState(null); // 'open' | 'close'
   const [counts, setCounts] = useState({});
   const [message, setMessage] = useState('');
+  const inputRefs = useRef([]);
 
   useEffect(() => {
-    fetchShiftStatus();
-  }, []);
+  if (modalOpen && modalType === 'open') {
+    axios.get('/shift/last-denominations')
+      .then(res => setCounts(res.data || {}))
+      .catch(() => setCounts({}));
+  }
+}, [modalOpen, modalType]);
 
   const fetchShiftStatus = async () => {
     try {
@@ -35,23 +40,29 @@ export default function SystemPage() {
     return denominations.reduce((sum, d) => sum + (counts[d] || 0) * d, 0);
   };
 
-  const handleSubmit = async () => {
-    const total = getTotal();
-    try {
-      if (modalType === 'open') {
-        await axios.post('/shift/open', { openingAmount: total });
-        setMessage(`Смена открыта на сумму ${total}₸`);
-      } else {
-        await axios.post('/shift/close', { closingAmount: total });
-        setMessage(`Смена закрыта на сумму ${total}₸`);
-      }
-      setModalOpen(false);
-      fetchShiftStatus();
-      setCounts({});
-    } catch (err) {
-      setMessage(err.response?.data?.message || 'Ошибка');
+const handleSubmit = async () => {
+  const total = getTotal();
+  try {
+    if (modalType === 'open') {
+      await axios.post('/shift/open', {
+        openingAmount: total,
+        openingDenominations: counts,
+      });
+      setMessage(`Смена открыта на сумму ${total}₸`);
+    } else {
+      await axios.post('/shift/close', {
+        closingAmount: total,
+        closingDenominations: counts,
+      });
+      setMessage(`Смена закрыта на сумму ${total}₸`);
     }
-  };
+    setModalOpen(false);
+    fetchShiftStatus();
+    setCounts({});
+  } catch (err) {
+    setMessage(err.response?.data?.message || 'Ошибка');
+  }
+};
 
   return (
     <div className="p-6">
@@ -77,7 +88,7 @@ export default function SystemPage() {
             </h2>
 
             <div className="space-y-3">
-              {denominations.map((denom) => (
+              {denominations.map((denom, index) => (
                 <div key={denom} className="flex items-center justify-between">
                   <label>{denom} ₸</label>
                   <input
@@ -85,6 +96,13 @@ export default function SystemPage() {
                     min="0"
                     value={counts[denom] || ''}
                     onChange={(e) => handleCountChange(denom, e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const next = inputRefs.current[index + 1];
+                        if (next) next.focus();
+                      }
+                    }}
+                    ref={(el) => (inputRefs.current[index] = el)}
                     className="border px-3 py-1 rounded w-24 text-right"
                   />
                 </div>
