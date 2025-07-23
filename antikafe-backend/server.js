@@ -11,6 +11,7 @@ const guestRoutes = require('./routes/guestRoutes');
 const userRoutes = require('./routes/userRoutes');
 const saleRoutes = require('./routes/saleRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const shiftRoutes = require('./routes/shiftRoutes');
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/shift', shiftRoutes);
 
 // 📦 Подключение к MongoDB и запуск сервера
 mongoose.connect(process.env.MONGO_URI, {
