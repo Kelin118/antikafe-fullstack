@@ -12,6 +12,20 @@ export default function SystemPage() {
   const inputRefs = useRef([]);
 
   useEffect(() => {
+  fetchShiftStatus();
+}, []);
+
+useEffect(() => {
+  if (modalOpen && modalType === 'open') {
+    axios.get('/shift/last-denominations')
+      .then(res => setCounts(res.data || {}))
+      .catch(() => setCounts({}));
+  }
+}, [modalOpen, modalType]);
+
+
+  
+  useEffect(() => {
   if (modalOpen && modalType === 'open') {
     axios.get('/shift/last-denominations')
       .then(res => setCounts(res.data || {}))
