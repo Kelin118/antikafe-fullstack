@@ -9,29 +9,20 @@ export default function SystemPage() {
   const [modalType, setModalType] = useState(null); // 'open' | 'close'
   const [counts, setCounts] = useState({});
   const [message, setMessage] = useState('');
+  const [terminalAmount, setTerminalAmount] = useState('');
   const inputRefs = useRef([]);
 
   useEffect(() => {
-  fetchShiftStatus();
-}, []);
+    fetchShiftStatus();
+  }, []);
 
-useEffect(() => {
-  if (modalOpen && modalType === 'open') {
-    axios.get('/shift/last-denominations')
-      .then(res => setCounts(res.data || {}))
-      .catch(() => setCounts({}));
-  }
-}, [modalOpen, modalType]);
-
-
-  
   useEffect(() => {
-  if (modalOpen && modalType === 'open') {
-    axios.get('/shift/last-denominations')
-      .then(res => setCounts(res.data || {}))
-      .catch(() => setCounts({}));
-  }
-}, [modalOpen, modalType]);
+    if (modalOpen && modalType === 'open') {
+      axios.get('/shift/last-denominations')
+        .then(res => setCounts(res.data || {}))
+        .catch(() => setCounts({}));
+    }
+  }, [modalOpen, modalType]);
 
   const fetchShiftStatus = async () => {
     try {
@@ -44,56 +35,72 @@ useEffect(() => {
 
   const handleCountChange = (denom, value) => {
     const num = parseInt(value, 10);
-    setCounts((prev) => ({
-      ...prev,
-      [denom]: isNaN(num) ? 0 : num,
-    }));
+    setCounts((prev) => ({ ...prev, [denom]: isNaN(num) ? 0 : num }));
   };
 
   const getTotal = () => {
     return denominations.reduce((sum, d) => sum + (counts[d] || 0) * d, 0);
   };
 
-const handleSubmit = async () => {
-  const total = getTotal();
-  try {
-    if (modalType === 'open') {
-      await axios.post('/shift/open', {
-        openingAmount: total,
-        openingDenominations: counts,
-      });
-      setMessage(`Смена открыта на сумму ${total}₸`);
-    } else {
-      await axios.post('/shift/close', {
-        closingAmount: total,
-        closingDenominations: counts,
-      });
-      setMessage(`Смена закрыта на сумму ${total}₸`);
+  const handleSubmit = async () => {
+    const total = getTotal();
+    try {
+      if (modalType === 'open') {
+        await axios.post('/shift/open', {
+          openingAmount: total,
+          openingDenominations: counts,
+        });
+        setMessage(`Смена открыта на сумму ${total}₸`);
+      } else {
+        await axios.post('/shift/close', {
+          closingAmount: total,
+          closingDenominations: counts,
+        });
+        setMessage(`Смена закрыта на сумму ${total}₸`);
+      }
+      setModalOpen(false);
+      fetchShiftStatus();
+      setCounts({});
+    } catch (err) {
+      setMessage(err.response?.data?.message || 'Ошибка');
     }
-    setModalOpen(false);
-    fetchShiftStatus();
-    setCounts({});
-  } catch (err) {
-    setMessage(err.response?.data?.message || 'Ошибка');
-  }
-};
+  };
+
+  const difference = terminalAmount ? getTotal() - parseInt(terminalAmount, 10) : 0;
 
   return (
     <div className="p-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-  {/* Блок Наличные */}
-  <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
-    <h3 className="text-lg font-semibold mb-2">Оплата наличными</h3>
-    <p>💵 Сумма на начало смены: <span className="font-bold">{getTotal().toLocaleString()} ₸</span></p>
-    <p>💰 Изъятие наличных: <span className="font-bold text-red-600">0 ₸</span></p>
-  </div>
+        {/* Наличные */}
+        <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
+          <h3 className="text-lg font-semibold mb-2">Оплата наличными</h3>
+          <p>💵 Сумма на начало смены: <span className="font-bold">{getTotal().toLocaleString()} ₸</span></p>
+          <p>💰 Изъятие наличных: <span className="font-bold text-red-600">0 ₸</span></p>
+          <p>💼 Сумма на конец смены: <span className="font-bold">{getTotal().toLocaleString()} ₸</span></p>
+          <button className="text-blue-500 underline" onClick={() => { setModalType('close'); setModalOpen(true); }}>Уточнить</button>
+        </div>
 
-  {/* Блок Картой */}
-  <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
-    <h3 className="text-lg font-semibold mb-2">Оплата картой</h3>
-    <p>💳 Проведено по карте: <span className="font-bold text-blue-600">0 ₸</span></p>
-  </div>
-</div>
+        {/* Картой */}
+        <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
+          <h3 className="text-lg font-semibold mb-2">Оплата картой</h3>
+          <p>💳 Проведено по карте: <span className="font-bold text-blue-600">{getTotal().toLocaleString()} ₸</span></p>
+          <div className="mt-2">
+            <label className="block text-sm mb-1">Сумма по терминалу</label>
+            <input
+              type="number"
+              className="border px-3 py-1 rounded w-full"
+              value={terminalAmount}
+              onChange={(e) => setTerminalAmount(e.target.value)}
+            />
+          </div>
+          <button className="text-blue-500 underline mt-2" onClick={() => { setModalType('close'); setModalOpen(true); }}>Сверить</button>
+          {difference !== 0 && (
+            <div className="mt-2 text-sm text-yellow-600 border-t pt-2">
+              {difference > 0 ? `Излишек: ${difference} ₸` : `Недостача: ${-difference} ₸`}
+            </div>
+          )}
+        </div>
+      </div>
 
       <h1 className="text-2xl font-bold mb-4">Управление сменой</h1>
 
