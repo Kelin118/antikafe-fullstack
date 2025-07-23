@@ -2,42 +2,26 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosInstance';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
-
-dayjs.extend(relativeTime);
 
 export default function GuestsPage() {
-  const [groups, setGroups] = useState([]);
+  const [guests, setGuests] = useState([]);
+  const [filteredGuests, setFilteredGuests] = useState([]);
   const [dateFilter, setDateFilter] = useState('');
   const [showFilter, setShowFilter] = useState(false);
+  const [now, setNow] = useState(dayjs());
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchGuests();
-    const interval = setInterval(() => setGroups([...groups]), 60000); // ⏱ обновление каждую минуту
+    const interval = setInterval(() => setNow(dayjs()), 60000);
     return () => clearInterval(interval);
   }, []);
 
   const fetchGuests = async () => {
     try {
       const response = await axios.get('/guests');
-      const guests = response.data;
-
-      // Группировка по groupId
-      const grouped = {};
-      guests.forEach(guest => {
-        const groupId = guest.groupId || 'no-group';
-        if (!grouped[groupId]) grouped[groupId] = [];
-        grouped[groupId].push(guest);
-      });
-
-      const sortedGroups = Object.entries(grouped).map(([groupId, members]) => ({
-        groupId,
-        guests: members,
-        createdAt: members[0]?.createdAt || null
-      })).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-      setGroups(sortedGroups);
+      setGuests(response.data);
+      setFilteredGuests(response.data);
     } catch (error) {
       console.error('Ошибка при получении гостей:', error);
     }
@@ -54,18 +38,28 @@ export default function GuestsPage() {
   };
 
   const handleDateChange = (e) => {
-    const selected = e.target.value;
-    setDateFilter(selected);
+    const selectedDate = e.target.value;
+    setDateFilter(selectedDate);
+    const filtered = guests.filter((guest) =>
+      dayjs(guest.createdAt).format('YYYY-MM-DD') === selectedDate
+    );
+    setFilteredGuests(filtered);
   };
 
-  const filteredGroups = dateFilter
-    ? groups.filter(group => dayjs(group.createdAt).format('YYYY-MM-DD') === dateFilter)
-    : groups;
+  const getTotalForGuest = (guest) =>
+    guest.products?.reduce((sum, p) => sum + (p.price || 0), 0);
+
+  const groupedGuests = filteredGuests.reduce((acc, guest) => {
+    const group = guest.groupId || 'single';
+    if (!acc[group]) acc[group] = [];
+    acc[group].push(guest);
+    return acc;
+  }, {});
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-        <h1 className="text-2xl font-bold">Группы гостей</h1>
+        <h1 className="text-2xl font-bold">Гости</h1>
         <div className="flex gap-2">
           <button
             onClick={() => setShowFilter(!showFilter)}
@@ -92,6 +86,7 @@ export default function GuestsPage() {
           />
           <button
             onClick={() => {
+              setFilteredGuests(guests);
               setDateFilter('');
             }}
             className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded"
@@ -101,54 +96,43 @@ export default function GuestsPage() {
         </div>
       )}
 
-      {filteredGroups.length === 0 ? (
+      {filteredGuests.length === 0 ? (
         <p className="text-gray-500">Нет гостей для отображения</p>
       ) : (
         <div className="space-y-6">
-          {filteredGroups.map((group, i) => {
-            const total = group.guests.reduce(
-              (sum, g) => sum + (g.products?.reduce((s, p) => s + p.price, 0) || 0),
-              0
-            );
-            const minutesAgo = dayjs().diff(group.createdAt, 'minute');
-
-            return (
-              <div key={i} className="bg-white rounded shadow p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-bold">🧑‍🤝‍🧑 Группа #{group.groupId.slice(0, 6)}</h2>
-                  <div className="text-gray-500">
-                    ⏱ {minutesAgo} мин назад • 💰 {total} ₸
-                  </div>
-                </div>
-
-                <ul className="space-y-2">
-                  {group.guests.map((g) => (
-                    <li
-                      key={g._id}
-                      className="flex justify-between items-start bg-gray-50 px-4 py-3 rounded"
-                    >
-                      <div>
-                        <div className="font-semibold">{g.name}</div>
-                        {g.products?.length > 0 && (
-                          <ul className="text-sm text-gray-600 list-disc list-inside">
-                            {g.products.map((p, idx) => (
-                              <li key={idx}>{p.name} — {p.price} ₸</li>
-                            ))}
-                          </ul>
-                        )}
+          {Object.entries(groupedGuests).map(([groupId, groupGuests], i) => (
+            <div key={groupId} className="border rounded-lg shadow p-4 bg-white">
+              {groupId !== 'single' && (
+                <h3 className="font-bold text-lg mb-2">Группа #{i + 1}</h3>
+              )}
+              <ul className="space-y-3">
+                {groupGuests.map((guest) => (
+                  <li
+                    key={guest._id}
+                    className="flex justify-between items-center border p-3 rounded"
+                  >
+                    <div>
+                      <div className="font-semibold">{guest.name}</div>
+                      <div className="text-sm text-gray-500">
+                        {now.diff(dayjs(guest.createdAt), 'minute')} мин назад
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-green-600 font-bold">
+                        {getTotalForGuest(guest)} ₸
                       </div>
                       <button
-                        onClick={() => handleDelete(g._id)}
-                        className="text-red-600 hover:underline text-sm"
+                        onClick={() => handleDelete(guest._id)}
+                        className="text-red-600 hover:underline text-sm mt-1"
                       >
                         Удалить
                       </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       )}
     </div>
