@@ -1,222 +1,140 @@
-// 💡 Обновлённый AddGuestsAndProducts — 2/3 слева (товары), 1/3 справа (гости)
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosInstance';
-import { Dialog } from '@headlessui/react';
+import dayjs from 'dayjs';
 
-export default function AddGuestsAndProducts() {
-  const [groups, setGroups] = useState([]);
-  const [selectedGroupId, setSelectedGroupId] = useState(null);
-  const [products, setProducts] = useState([]);
-
+export default function GuestsPage() {
   const [guests, setGuests] = useState([]);
-  const [selectedGuestIndex, setSelectedGuestIndex] = useState(null);
-
-  const [isGuestModalOpen, setIsGuestModalOpen] = useState(false);
-  const [newGuestName, setNewGuestName] = useState('');
-
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [paymentType, setPaymentType] = useState('cash');
-  const [cashAmount, setCashAmount] = useState('');
-  const [cardAmount, setCardAmount] = useState('');
+  const [filteredGuests, setFilteredGuests] = useState([]);
+  const [dateFilter, setDateFilter] = useState('');
+  const [showFilter, setShowFilter] = useState(false);
+  const [now, setNow] = useState(dayjs());
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchGroups = async () => {
-      const res = await axios.get('/products/groups');
-      setGroups(res.data);
-      if (res.data[0]) setSelectedGroupId(res.data[0]._id);
-    };
-    const fetchProducts = async () => {
-      const res = await axios.get('/products');
-      setProducts(res.data);
-    };
-    fetchGroups();
-    fetchProducts();
+    fetchGuests();
+    const interval = setInterval(() => setNow(dayjs()), 60000);
+    return () => clearInterval(interval);
   }, []);
 
-  const addGuest = () => {
-    if (!newGuestName.trim()) return;
-    setGuests([...guests, { name: newGuestName.trim(), products: [] }]);
-    setNewGuestName('');
-    setIsGuestModalOpen(false);
-  };
-
-  const addProductToGuest = (product) => {
-    if (selectedGuestIndex === null) return alert('Выберите гостя');
-    const updatedGuests = [...guests];
-    updatedGuests[selectedGuestIndex].products.push(product);
-    setGuests(updatedGuests);
-  };
-
-  const totalSum = guests.reduce((sum, g) => (
-    sum + g.products.reduce((pSum, p) => pSum + p.price, 0)
-  ), 0);
-
-  const handleSubmit = async () => {
+  const fetchGuests = async () => {
     try {
-      const payload = {
-        guests: guests.map(g => g.name),
-        paymentType,
-        discount: 0,
-        ...(paymentType === 'mixed' && {
-          cashAmount: parseFloat(cashAmount) || 0,
-          cardAmount: parseFloat(cardAmount) || 0
-        })
-      };
-      await axios.post('/guests/group', payload);
-      alert('Оплата проведена');
-      setGuests([]);
-      setIsPaymentModalOpen(false);
-    } catch (err) {
-      console.error('Ошибка оплаты:', err);
+      const response = await axios.get('/guests');
+      setGuests(response.data);
+      setFilteredGuests(response.data);
+    } catch (error) {
+      console.error('Ошибка при получении гостей:', error);
     }
   };
 
+  const handleDelete = async (id) => {
+    if (!window.confirm('Удалить гостя?')) return;
+    try {
+      await axios.delete(`/guests/${id}`);
+      fetchGuests();
+    } catch (error) {
+      console.error('Ошибка при удалении гостя:', error);
+    }
+  };
+
+  const handleDateChange = (e) => {
+    const selectedDate = e.target.value;
+    setDateFilter(selectedDate);
+    const filtered = guests.filter((guest) =>
+      dayjs(guest.createdAt).format('YYYY-MM-DD') === selectedDate
+    );
+    setFilteredGuests(filtered);
+  };
+
+  const getTotalForGuest = (guest) =>
+    guest.products?.reduce((sum, p) => sum + (p.price || 0), 0);
+
+  const groupedGuests = filteredGuests.reduce((acc, guest) => {
+    const group = guest.groupId || 'single';
+    if (!acc[group]) acc[group] = [];
+    acc[group].push(guest);
+    return acc;
+  }, {});
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
-      {/* ТОВАРЫ И ГРУППЫ — 2/3 ширины */}
-      <div className="col-span-2 bg-white rounded shadow p-4 h-full">
-        <h2 className="text-lg font-semibold mb-2">📦 Группы товаров</h2>
-        <div className="flex gap-4">
-          {/* Сайдбар групп */}
-          <div className="w-1/4 border-r pr-4">
-            <ul className="space-y-2">
-              {groups.map(g => (
-                <li key={g._id}>
-                  <button
-                    className={`w-full text-left px-3 py-2 rounded ${g._id === selectedGroupId ? 'bg-primary text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
-                    onClick={() => setSelectedGroupId(g._id)}
-                  >
-                    {g.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Товары */}
-          <div className="w-3/4 grid grid-cols-2 gap-4">
-  {products
-    .filter((p) => {
-      const groupId = typeof p.groupId === 'object' ? p.groupId._id : p.groupId;
-      return groupId === selectedGroupId;
-    })
-    .map((p) => (
-      <div key={p._id} className="border p-2 rounded shadow-sm">
-        <div className="font-semibold">{p.name}</div>
-        <div className="text-sm text-gray-600">{p.price} ₸</div>
-        <button
-          onClick={() => addProductToGuest(p)}
-          className="mt-2 w-full bg-green-500 text-white py-1 rounded"
-        >
-          ➕ Добавить
-        </button>
-      </div>
-    ))
-  }
-
-  {products.filter((p) => {
-    const groupId = typeof p.groupId === 'object' ? p.groupId._id : p.groupId;
-    return groupId === selectedGroupId;
-  }).length === 0 && (
-    <div className="text-gray-400 col-span-2">Нет товаров в этой группе</div>
-  )}
-          </div>
-        </div>
-      </div>
-
-      {/* ГОСТИ — 1/3 ширины */}
-      <div className="col-span-1 bg-white rounded shadow p-4">
-        <div className="flex justify-between mb-4">
-          <h2 className="text-lg font-semibold">👥 Гости</h2>
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+        <h1 className="text-2xl font-bold">Гости</h1>
+        <div className="flex gap-2">
           <button
-            onClick={() => setIsGuestModalOpen(true)}
-            className="bg-blue-500 text-white px-4 py-2 rounded"
+            onClick={() => setShowFilter(!showFilter)}
+            className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded"
           >
-            + Добавить гостя
+            Фильтр
+          </button>
+          <button
+            onClick={() => navigate('/admin/add-group')}
+            className="bg-primary text-white px-4 py-2 rounded hover:bg-primary/90"
+          >
+            Добавить гостя
           </button>
         </div>
+      </div>
 
-        {guests.length === 0 && <p className="text-gray-500">Гости не добавлены</p>}
-
-        {guests.map((g, index) => (
-          <div
-            key={index}
-            onClick={() => setSelectedGuestIndex(index)}
-            className={`p-3 rounded mb-3 cursor-pointer border ${selectedGuestIndex === index ? 'border-blue-500 bg-blue-50' : 'bg-gray-50'}`}
+      {showFilter && (
+        <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-4">
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={handleDateChange}
+            className="border rounded px-3 py-2"
+          />
+          <button
+            onClick={() => {
+              setFilteredGuests(guests);
+              setDateFilter('');
+            }}
+            className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded"
           >
-            <div className="font-semibold">{g.name}</div>
-            {g.products.length > 0 && (
-              <ul className="text-sm list-disc list-inside text-gray-700">
-                {g.products.map((p, idx) => (
-                  <li key={idx}>{p.name} — {p.price} ₸</li>
+            Сбросить фильтр
+          </button>
+        </div>
+      )}
+
+      {filteredGuests.length === 0 ? (
+        <p className="text-gray-500">Нет гостей для отображения</p>
+      ) : (
+        <div className="space-y-6">
+          {Object.entries(groupedGuests).map(([groupId, groupGuests], i) => (
+            <div key={groupId} className="border rounded-lg shadow p-4 bg-white">
+              {groupId !== 'single' && (
+                <h3 className="font-bold text-lg mb-2">Группа #{i + 1}</h3>
+              )}
+              <ul className="space-y-3">
+                {groupGuests.map((guest) => (
+                  <li
+                    key={guest._id}
+                    className="flex justify-between items-center border p-3 rounded"
+                  >
+                    <div>
+                      <div className="font-semibold">{guest.name}</div>
+                      <div className="text-sm text-gray-500">
+                        {now.diff(dayjs(guest.createdAt), 'minute')} мин назад
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-green-600 font-bold">
+                        {getTotalForGuest(guest)} ₸
+                      </div>
+                      <button
+                        onClick={() => handleDelete(guest._id)}
+                        className="text-red-600 hover:underline text-sm mt-1"
+                      >
+                        Удалить
+                      </button>
+                    </div>
+                  </li>
                 ))}
               </ul>
-            )}
-          </div>
-        ))}
-
-        {guests.length > 0 && (
-          <div className="mt-6">
-            <div className="font-bold text-xl mb-2">Итого: {totalSum} ₸</div>
-            <button
-              onClick={() => setIsPaymentModalOpen(true)}
-              className="w-full bg-secondary text-white py-3 rounded text-lg"
-            >
-              💳 Принять оплату
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* МОДАЛКИ */}
-      <Dialog open={isGuestModalOpen} onClose={() => setIsGuestModalOpen(false)} className="fixed inset-0 z-50 flex items-center justify-center">
-        <Dialog.Panel className="bg-white p-6 rounded shadow w-full max-w-md">
-          <Dialog.Title className="text-xl font-bold mb-4">Добавить гостя</Dialog.Title>
-          <input
-            value={newGuestName}
-            onChange={(e) => setNewGuestName(e.target.value)}
-            placeholder="Имя гостя"
-            className="w-full border px-4 py-2 rounded mb-4"
-          />
-          <button onClick={addGuest} className="bg-primary text-white px-4 py-2 rounded w-full">Добавить</button>
-        </Dialog.Panel>
-      </Dialog>
-
-      <Dialog open={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} className="fixed inset-0 z-50 flex items-center justify-center">
-        <Dialog.Panel className="bg-white p-6 rounded shadow w-full max-w-md">
-          <Dialog.Title className="text-xl font-bold mb-4">Выберите способ оплаты</Dialog.Title>
-          <select
-            value={paymentType}
-            onChange={(e) => setPaymentType(e.target.value)}
-            className="w-full border px-4 py-2 rounded mb-4"
-          >
-            <option value="cash">Наличные</option>
-            <option value="card">Карта</option>
-            <option value="mixed">Смешанная</option>
-          </select>
-          {paymentType === 'mixed' && (
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <input
-                type="number"
-                placeholder="Наличные"
-                value={cashAmount}
-                onChange={(e) => setCashAmount(e.target.value)}
-                className="border px-4 py-2 rounded"
-              />
-              <input
-                type="number"
-                placeholder="Карта"
-                value={cardAmount}
-                onChange={(e) => setCardAmount(e.target.value)}
-                className="border px-4 py-2 rounded"
-              />
             </div>
-          )}
-          <button onClick={handleSubmit} className="bg-secondary text-white w-full py-2 rounded">
-            Подтвердить оплату
-          </button>
-        </Dialog.Panel>
-      </Dialog>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
